@@ -39,19 +39,31 @@ export default function TicketPage() {
   const [loading, setLoading] = useState(true)
   const [isDownloading, setIsDownloading] = useState(false)
 
+  // Error debug state
+  const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     if (!registrationId || !user) return
 
     const loadTicket = async () => {
       try {
         setLoading(true)
+        setError(null)
 
         const response = await api.getRegistration(registrationId)
+
         const registration = (response as any).data || response
+        if (!registration || !registration._id) {
+          throw new Error("Invalid registration data received")
+        }
 
         const event = registration.eventId
-        const startDate = new Date(event.startTime)
-        const regDate = new Date(registration.createdAt)
+        if (!event) {
+          throw new Error("Event data missing in registration")
+        }
+
+        const startDate = new Date(event.startTime || Date.now())
+        const regDate = new Date(registration.createdAt || Date.now())
 
         const formattedDate = startDate.toLocaleDateString("en-US", {
           month: "long",
@@ -71,17 +83,17 @@ export default function TicketPage() {
         })
 
         const organizerName =
-          typeof event.organizerId === "object"
-            ? event.organizerId.name
+          event.organizerId && typeof event.organizerId === "object"
+            ? (event.organizerId as any).name
             : "Campus Events"
 
         setTicketData({
           id: registration._id,
-          eventTitle: event.title,
+          eventTitle: event.title || "Unknown Event",
           eventDate: formattedDate,
           eventTime: formattedTime,
-          eventVenue: event.venue,
-          eventAddress: event.venue,
+          eventVenue: event.venue || "TBD",
+          eventAddress: event.venue || "TBD",
           organizer: organizerName,
           attendeeName: user.name,
           attendeeEmail: user.email,
@@ -90,13 +102,15 @@ export default function TicketPage() {
           price: event.price || 0,
           status: registration.status,
           qrData:
+            (registration.ticketId && (registration.ticketId as any).qrCode) ||
             registration.qrCode ||
-            `${registration._id}|${event._id}|${user.email}|${formattedDate}`,
+            `${registration._id}|${event._id || 'unknown'}|${user.email}|${formattedDate}`,
           instructions:
             "Please arrive 15 minutes early for check-in. Bring a valid ID for verification.",
         })
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to load ticket:", error)
+        setError(error.message || "Failed to load ticket")
       } finally {
         setLoading(false)
       }
@@ -105,7 +119,24 @@ export default function TicketPage() {
     loadTicket()
   }, [registrationId, user])
 
-  // ✅ EARLY LOADING RETURN
+  // ✅ ERROR & LOADING RETURN
+  if (error) {
+    return (
+      <AuthGuard requiredRole="student">
+        <div className="min-h-screen bg-background">
+          <Navbar user={user ? { name: user.name, email: user.email, role: user.role } : undefined} />
+          <div className="container mx-auto px-4 py-10 text-center">
+            <div className="max-w-md mx-auto p-6 bg-destructive/10 text-destructive rounded-lg">
+              <h3 className="text-lg font-bold">Error Loading Ticket</h3>
+              <p>{error}</p>
+              <Button className="mt-4" onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+          </div>
+        </div>
+      </AuthGuard>
+    )
+  }
+
   if (loading || !ticketData) {
     return (
       <AuthGuard requiredRole="student">

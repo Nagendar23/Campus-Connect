@@ -15,12 +15,8 @@ import {
   Download,
   Share2,
   Award as IdCard,
-  Phone,
-  Shield,
-  Smartphone,
   Wifi,
   WifiOff,
-  Clock,
   CheckCircle,
   AlertTriangle,
   Nfc,
@@ -28,26 +24,21 @@ import {
   Edit,
   Save,
   X,
+  Smartphone,
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth-context"
-import { api } from "@/lib/api"
 
 /* ---------- helpers ---------- */
 
-// always return a safe user identifier
-const getUserIdentifier = (user: any) => {
-  return (user?._id || user?.id || user?.email || "UNKNOWN").toString()
-}
+const getUserIdentifier = (user: any) =>
+  (user?._id || user?.id || user?.email || "UNKNOWN").toString()
 
-// Generate QR data for user
 const generateQRData = (user: any) => {
   const uid = getUserIdentifier(user)
-  const expiry = new Date(
-    Date.now() + 365 * 24 * 60 * 60 * 1000
-  )
+  const expiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
     .toISOString()
     .split("T")[0]
 
@@ -56,74 +47,42 @@ const generateQRData = (user: any) => {
 
 export default function DigitalIDPage() {
   const { user, logout, updateProfile } = useAuth()
+
+  /* ---------- HOOKS (must stay above all returns) ---------- */
+
   const [isOnline, setIsOnline] = useState(true)
   const [nfcSupported, setNfcSupported] = useState(false)
   const [lastSync, setLastSync] = useState(new Date())
   const [securityLevel, setSecurityLevel] =
     useState<"basic" | "enhanced" | "maximum">("enhanced")
-  
-  // Edit mode state
+
+  // Editing state
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({
     name: "",
     email: "",
-    phone: ""
+    phone: "",
   })
   const [isSaving, setIsSaving] = useState(false)
 
   // Check URL parameter for edit mode
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
-      if (params.get('edit') === 'true') {
+      if (params.get("edit") === "true") {
         setIsEditing(true)
       }
     }
   }, [])
 
-  if (!user) return null
-
-  const userIdentifier = getUserIdentifier(user)
-
-  const studentData = {
-    id: userIdentifier.slice(-6).toUpperCase(),
-    name: user.name,
-    email: user.email,
-    phone: (user as any).phone || "+1 (555) 000-0000",
-    program: (user as any).program || "Computer Science",
-    year: (user as any).year || "Senior",
-    status: "Active",
-    issueDate: new Date(user.createdAt || Date.now())
-      .toISOString()
-      .split("T")[0],
-    expiryDate: new Date(
-      Date.now() + 365 * 24 * 60 * 60 * 1000
-    )
-      .toISOString()
-      .split("T")[0],
-    photo: user.avatarUrl || null,
-    qrData: generateQRData(user),
-    emergencyContact: {
-      name: "Emergency Contact",
-      phone: "+1 (555) 000-0000",
-      relationship: "Family",
-    },
-    medicalInfo: {
-      bloodType: "O+",
-      allergies: [] as string[],
-      medications: [] as string[],
-    },
-    accessLevel: "Standard",
-    lastVerified: new Date().toISOString(),
-  }
-
   // Initialize edit form when entering edit mode
   useEffect(() => {
+    if (!user) return
     if (isEditing) {
       setEditForm({
         name: user.name,
         email: user.email,
-        phone: (user as any).phone || ""
+        phone: (user as any).phone || "",
       })
     }
   }, [isEditing, user])
@@ -144,6 +103,44 @@ export default function DigitalIDPage() {
       window.removeEventListener("offline", handleOffline)
     }
   }, [])
+
+  /* ---------- SAFE RETURN AFTER ALL HOOKS ---------- */
+
+  if (!user) return null
+
+  /* ---------- DATA THAT DEPENDS ON USER ---------- */
+
+  const userIdentifier = getUserIdentifier(user)
+
+  const studentData = {
+    id: userIdentifier.slice(-6).toUpperCase(),
+    name: user.name,
+    email: user.email,
+    phone: (user as any).phone || "+1 (555) 000-0000",
+    program: (user as any).program || "Computer Science",
+    year: (user as any).year || "Senior",
+    status: "Active",
+    issueDate: new Date(user.createdAt || Date.now()).toISOString().split("T")[0],
+    expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    photo: user.avatarUrl || null,
+    qrData: generateQRData(user),
+    emergencyContact: {
+      name: "Emergency Contact",
+      phone: "+1 (555) 000-0000",
+      relationship: "Family",
+    },
+    medicalInfo: {
+      bloodType: "O+",
+      allergies: [] as string[],
+      medications: [] as string[],
+    },
+    accessLevel: "Standard",
+    lastVerified: new Date().toISOString(),
+  }
+
+  /* ---------- event handlers ---------- */
 
   const handleDownload = () => {
     const canvas = document.createElement("canvas")
@@ -221,8 +218,6 @@ export default function DigitalIDPage() {
   }
 
   const handleSaveProfile = async () => {
-    if (!user) return
-    
     try {
       setIsSaving(true)
       await updateProfile(editForm)
@@ -242,24 +237,32 @@ export default function DigitalIDPage() {
     }
   }
 
+  /* ---------- RENDER ---------- */
+
   return (
     <AuthGuard requiredRole="student">
       <div className="min-h-screen bg-background">
-        <Navbar user={user ? { name: user.name, email: user.email, role: user.role, avatarUrl: user.avatarUrl } : undefined} />
+        <Navbar
+          user={{
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            avatarUrl: user.avatarUrl,
+          }}
+        />
 
         <div className="flex">
           <Sidebar role="student" />
 
           <main className="flex-1 p-6">
             <div className="max-w-4xl mx-auto space-y-6">
+              {/* Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <IdCard className="h-8 w-8 text-primary" />
                   <div>
                     <h1 className="text-3xl font-bold">Digital Student ID</h1>
-                    <p className="text-muted-foreground">
-                      Secure digital identification
-                    </p>
+                    <p className="text-muted-foreground">Secure digital identification</p>
                   </div>
                 </div>
 
@@ -273,7 +276,7 @@ export default function DigitalIDPage() {
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
                   </Button>
-                  
+
                   <Badge variant={isOnline ? "default" : "secondary"}>
                     {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
                     <span className="ml-1">{isOnline ? "Online" : "Offline"}</span>
@@ -289,12 +292,11 @@ export default function DigitalIDPage() {
               {isExpiringSoon() && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Your ID expires on {studentData.expiryDate}
-                  </AlertDescription>
+                  <AlertDescription>Your ID expires on {studentData.expiryDate}</AlertDescription>
                 </Alert>
               )}
 
+              {/* Tabs */}
               <Tabs defaultValue="id-card">
                 <TabsList className="grid grid-cols-4">
                   <TabsTrigger value="id-card">ID Card</TabsTrigger>
@@ -303,6 +305,7 @@ export default function DigitalIDPage() {
                   <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
 
+                {/* ID Card */}
                 <TabsContent value="id-card" className="space-y-6">
                   <DigitalIDCard
                     studentData={studentData}
@@ -315,16 +318,19 @@ export default function DigitalIDPage() {
                       <Download className="mr-2 h-4 w-4" />
                       Download
                     </Button>
+
                     <Button variant="outline" onClick={handleShare}>
                       <Share2 className="mr-2 h-4 w-4" />
                       Share
                     </Button>
+
                     {nfcSupported && (
                       <Button variant="outline" onClick={handleNFCWrite}>
                         <Nfc className="mr-2 h-4 w-4" />
                         Write NFC
                       </Button>
                     )}
+
                     <Button variant="outline">
                       <Smartphone className="mr-2 h-4 w-4" />
                       Add to Wallet
@@ -332,6 +338,7 @@ export default function DigitalIDPage() {
                   </div>
                 </TabsContent>
 
+                {/* QR Verification */}
                 <TabsContent value="verification" className="space-y-6">
                   <Card>
                     <CardHeader>
@@ -345,30 +352,27 @@ export default function DigitalIDPage() {
                       <div className="text-center space-y-2">
                         <p className="text-sm font-medium">{studentData.name}</p>
                         <p className="text-xs text-muted-foreground">ID: {studentData.id}</p>
-                        <p className="text-xs text-muted-foreground">Valid until: {studentData.expiryDate}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Valid until: {studentData.expiryDate}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
 
+                {/* Profile */}
                 <TabsContent value="profile" className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>Edit Profile</CardTitle>
-                      <CardDescription>
-                        Update your personal information
-                      </CardDescription>
+                      <CardDescription>Update your personal information</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="relative">
                           {studentData.photo ? (
                             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
-                              <img
-                                src={studentData.photo}
-                                alt="Profile"
-                                className="w-full h-full object-cover"
-                              />
+                              <img src={studentData.photo} alt="Profile" className="w-full h-full object-cover" />
                             </div>
                           ) : (
                             <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-4 border-primary/20">
@@ -378,12 +382,10 @@ export default function DigitalIDPage() {
                             </div>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {studentData.photo ? "Profile picture" : "No profile picture - showing initial"}
-                        </p>
                       </div>
 
                       <div className="space-y-4">
+                        {/* Name */}
                         <div className="space-y-2">
                           <Label htmlFor="name">Full Name</Label>
                           <Input
@@ -395,6 +397,7 @@ export default function DigitalIDPage() {
                           />
                         </div>
 
+                        {/* Email */}
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
                           <Input
@@ -407,6 +410,7 @@ export default function DigitalIDPage() {
                           />
                         </div>
 
+                        {/* Phone */}
                         <div className="space-y-2">
                           <Label htmlFor="phone">Contact Number</Label>
                           <Input
@@ -428,16 +432,16 @@ export default function DigitalIDPage() {
                             </Button>
                           ) : (
                             <>
-                              <Button 
-                                onClick={handleSaveProfile} 
+                              <Button
+                                onClick={handleSaveProfile}
                                 disabled={isSaving}
                                 className="flex-1"
                               >
                                 <Save className="mr-2 h-4 w-4" />
                                 {isSaving ? "Saving..." : "Save Changes"}
                               </Button>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 onClick={() => setIsEditing(false)}
                                 disabled={isSaving}
                                 className="flex-1"
@@ -453,6 +457,7 @@ export default function DigitalIDPage() {
                   </Card>
                 </TabsContent>
 
+                {/* Settings */}
                 <TabsContent value="settings">
                   <IDCardSettings
                     securityLevel={securityLevel}

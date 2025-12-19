@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, QrCode, CreditCard, MessageSquare, Award as IdCard, Users } from "lucide-react"
@@ -18,6 +19,7 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-foreground">Campus Connect</span>
             </div>
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <Link href="/auth/login">
                 <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                   Log in

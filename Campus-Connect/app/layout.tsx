@@ -23,7 +23,7 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange
+          storageKey="campus-connect-theme"
         >
           <AuthProvider>
             {children}

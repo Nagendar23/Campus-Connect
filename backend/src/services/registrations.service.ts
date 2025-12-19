@@ -63,14 +63,17 @@ export const registrationsService = {
         status: "confirmed",
       });
 
-      const qrCode = generateQRToken(registration._id.toString(), eventId);
-
+      // Create ticket first to get ID
       const ticket = await Ticket.create({
         userId,
         eventId,
         registrationId: registration._id,
-        qrCode,
+        qrCode: "pending", // placeholder
       });
+
+      const qrCode = generateQRToken(ticket._id.toString(), eventId);
+      ticket.qrCode = qrCode;
+      await ticket.save();
 
       registration.ticketId = ticket._id;
       await registration.save();

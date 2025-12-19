@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@variant dark (&:where(.dark, .dark *));
 
 :root {
   /* Campus Event Portal Theme - Modern Purple & Dark */
@@ -11,7 +11,8 @@
   --card-foreground: oklch(0.15 0.02 280);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.02 280);
-  --primary: oklch(0.6 0.2 280); /* Purple accent from design inspiration */
+  --primary: oklch(0.6 0.2 280);
+  /* Purple accent from design inspiration */
   --primary-foreground: oklch(0.99 0.005 280);
   --secondary: oklch(0.96 0.01 280);
   --secondary-foreground: oklch(0.25 0.02 280);
@@ -118,6 +119,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

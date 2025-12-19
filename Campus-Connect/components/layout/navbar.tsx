@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface NavbarProps {
   user?: {
@@ -47,6 +48,7 @@ export function Navbar({ user }: NavbarProps) {
           </Link>
 
           <div className="flex items-center space-x-3">
+            <ThemeToggle />
             {user ? (
               <>
                 <Button variant="ghost" size="icon" className="relative hover:bg-accent/50 rounded-full">

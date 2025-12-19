@@ -190,11 +190,11 @@ export default function QRScannerPage() {
           user={
             user
               ? {
-                  name: user.name,
-                  email: user.email,
-                  role: user.role,
-                  avatarUrl: user.avatarUrl,
-                }
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatarUrl: user.avatarUrl,
+              }
               : undefined
           }
         />
@@ -237,8 +237,8 @@ export default function QRScannerPage() {
                   value={
                     stats.totalRegistered
                       ? `${Math.round(
-                          (stats.checkedIn / stats.totalRegistered) * 100
-                        )}%`
+                        (stats.checkedIn / stats.totalRegistered) * 100
+                      )}%`
                       : "0%"
                   }
                 />
@@ -254,6 +254,29 @@ export default function QRScannerPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* MANUAL CHECK-IN */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Manual Check-in
+                  </CardTitle>
+                  <CardDescription>
+                    Enter Ticket ID manually if scanning fails
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex gap-4">
+                  <Input
+                    placeholder="Enter Ticket ID (e.g., TKT-... or MongoID)"
+                    value={manualTicketId}
+                    onChange={(e) => setManualTicketId(e.target.value)}
+                  />
+                  <Button onClick={handleManualCheckIn} disabled={loading || !manualTicketId}>
+                    Check In
+                  </Button>
+                </CardContent>
+              </Card>
 
               {/* SCANNER */}
               <Card>
@@ -293,11 +316,10 @@ export default function QRScannerPage() {
 
                   {scanResult && (
                     <div
-                      className={`p-4 rounded ${
-                        scanResult.success
+                      className={`p-4 rounded ${scanResult.success
                           ? "bg-green-500/10"
                           : "bg-red-500/10"
-                      }`}
+                        }`}
                     >
                       <p className="font-medium">{scanResult.message}</p>
                       {scanResult.attendee && (
