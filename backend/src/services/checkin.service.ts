@@ -7,80 +7,145 @@ import { parsePagination, buildPaginationMeta } from "../utils/pagination";
 
 export const checkinService = {
   async scanQRCode(token: string, scannerId: string) {
-    // Validate QR token
-    const validation = validateQRToken(token);
-    if (!validation.valid) {
-      throw new AppError(400, "INVALID_QR", validation.error);
-    }
+    try {
+      // Validate QR token
+      if (!token || typeof token !== 'string' || token.trim() === '') {
+        throw new AppError(400, "INVALID_QR", "QR token is required and must be a valid string");
+      }
 
-    const { ticketId, eventId } = validation;
+      const validation = validateQRToken(token);
+      if (!validation.valid) {
+        throw new AppError(400, "INVALID_QR", validation.error || "Invalid QR code format");
+      }
 
-    // Find ticket
-    const ticket = await Ticket.findById(ticketId).populate("eventId");
-    if (!ticket) {
-      throw new AppError(404, "TICKET_NOT_FOUND", "Ticket not found");
-    }
+      const { ticketId, eventId } = validation;
 
-    // Verify event match
-    if (ticket.eventId._id.toString() !== eventId) {
-      throw new AppError(400, "EVENT_MISMATCH", "Ticket does not belong to this event");
-    }
+      // Validate extracted data
+      if (!ticketId || !eventId) {
+        throw new AppError(400, "INVALID_QR_DATA", "QR code does not contain valid ticket or event information");
+      }
 
-    // Check if already checked in (idempotent)
-    if (ticket.checkedInAt) {
+      // Find ticket and populate user and event
+      const ticket = await Ticket.findById(ticketId)
+        .populate("userId", "name email avatarUrl")
+        .populate("eventId");
+      
+      if (!ticket) {
+        throw new AppError(404, "TICKET_NOT_FOUND", "Ticket not found. This QR code may be invalid or the ticket has been deleted.");
+      }
+
+      // Type-safe access to populated fields
+      const populatedEvent: any = ticket.eventId;
+      const populatedUser: any = ticket.userId;
+
+      if (!populatedEvent || !populatedEvent._id) {
+        throw new AppError(500, "EVENT_DATA_ERROR", "Event information could not be retrieved");
+      }
+
+      if (!populatedUser || !populatedUser._id) {
+        throw new AppError(500, "USER_DATA_ERROR", "User information could not be retrieved");
+      }
+
+      // Verify event match
+      const ticketEventId = populatedEvent._id.toString();
+      if (ticketEventId !== eventId) {
+        throw new AppError(400, "EVENT_MISMATCH", "This ticket is not valid for the scanned event");
+      }
+
+      // Check if already checked in (idempotent)
+      if (ticket.checkedInAt) {
+        return {
+          alreadyCheckedIn: true,
+          ticketId: ticket._id,
+          checkedInAt: ticket.checkedInAt,
+          message: "This ticket has already been checked in",
+          user: populatedUser,
+          event: populatedEvent,
+        };
+      }
+
+      // Perform check-in
+      ticket.checkedInAt = new Date();
+      ticket.checkInMethod = "qr";
+      await ticket.save();
+
+      // Create log with error handling
+      try {
+        await CheckInLog.create({
+          ticketId: ticket._id,
+          scannerId,
+          method: "qr",
+        });
+      } catch (logError) {
+        console.error("Failed to create check-in log:", logError);
+        // Don't fail the check-in if logging fails
+      }
+
       return {
-        alreadyCheckedIn: true,
+        alreadyCheckedIn: false,
         ticketId: ticket._id,
         checkedInAt: ticket.checkedInAt,
-        message: "Ticket already checked in",
+        message: "Check-in successful",
+        user: populatedUser,
+        event: populatedEvent,
       };
+    } catch (error) {
+      // Re-throw AppError instances
+      if (error instanceof AppError) {
+        throw error;
+      }
+      // Handle unexpected errors
+      console.error("Unexpected error in scanQRCode:", error);
+      throw new AppError(500, "CHECKIN_ERROR", "An unexpected error occurred during check-in");
     }
-
-    // Perform check-in
-    ticket.checkedInAt = new Date();
-    ticket.checkInMethod = "qr";
-    await ticket.save();
-
-    // Create log
-    await CheckInLog.create({
-      ticketId: ticket._id,
-      scannerId,
-      method: "qr",
-    });
-
-    return {
-      alreadyCheckedIn: false,
-      ticketId: ticket._id,
-      checkedInAt: ticket.checkedInAt,
-      message: "Check-in successful",
-    };
   },
 
   async getCheckInHistory(eventId: string, organizerId: string, query: any) {
-    // Verify event ownership
-    const event = await Event.findById(eventId);
-    if (!event) {
-      throw new AppError(404, "EVENT_NOT_FOUND", "Event not found");
+    try {
+      // Validate inputs
+      if (!eventId || typeof eventId !== 'string') {
+        throw new AppError(400, "INVALID_EVENT_ID", "Valid event ID is required");
+      }
+
+      if (!organizerId || typeof organizerId !== 'string') {
+        throw new AppError(400, "INVALID_ORGANIZER_ID", "Valid organizer ID is required");
+      }
+
+      // Verify event ownership
+      const event = await Event.findById(eventId);
+      if (!event) {
+        throw new AppError(404, "EVENT_NOT_FOUND", "Event not found");
+      }
+
+      if (event.organizerId.toString() !== organizerId) {
+        throw new AppError(403, "FORBIDDEN", "You don't have permission to view check-in history for this event");
+      }
+
+      const { skip, limit, page } = parsePagination(query);
+
+      // Find all tickets for this event with error handling
+      const [tickets, total] = await Promise.all([
+        Ticket.find({ eventId, checkedInAt: { $ne: null } })
+          .sort({ checkedInAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .populate("userId", "name email")
+          .lean(),
+        Ticket.countDocuments({ eventId, checkedInAt: { $ne: null } })
+      ]);
+
+      return {
+        data: tickets,
+        meta: buildPaginationMeta(total, page, limit),
+      };
+    } catch (error) {
+      // Re-throw AppError instances
+      if (error instanceof AppError) {
+        throw error;
+      }
+      // Handle unexpected errors
+      console.error("Unexpected error in getCheckInHistory:", error);
+      throw new AppError(500, "HISTORY_ERROR", "An unexpected error occurred while fetching check-in history");
     }
-
-    if (event.organizerId.toString() !== organizerId) {
-      throw new AppError(403, "FORBIDDEN", "You don't have permission to view check-in history");
-    }
-
-    const { skip, limit, page } = parsePagination(query);
-
-    // Find all tickets for this event
-    const tickets = await Ticket.find({ eventId, checkedInAt: { $ne: null } })
-      .sort({ checkedInAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate("userId", "name email");
-
-    const total = await Ticket.countDocuments({ eventId, checkedInAt: { $ne: null } });
-
-    return {
-      data: tickets,
-      meta: buildPaginationMeta(total, page, limit),
-    };
   },
 };

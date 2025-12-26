@@ -5,7 +5,7 @@ dotenv.config();
 export const config = {
   port: process.env.PORT || 8001,
   nodeEnv: process.env.NODE_ENV || "development",
-  mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/campusconnect",
+  mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/test",
   corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000",
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || "change_me_access",

@@ -10,7 +10,9 @@ import { generateQRToken } from "./utils/qr";
 async function seed() {
   try {
     await mongoose.connect(config.mongoUri);
-    console.log("✓ Connected to MongoDB");
+    const dbName = mongoose.connection.db.databaseName;
+    console.log(`✓ Connected to MongoDB`);
+    console.log(`✓ Using database: ${dbName}`);
 
     // Clear existing data
     await Promise.all([

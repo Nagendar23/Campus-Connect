@@ -6,7 +6,30 @@ export const checkinController = {
   async scanQRCode(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { token } = req.body;
-      const scannerId = req.user!.userId;
+      
+      // Validate request body
+      if (!token || typeof token !== 'string' || token.trim() === '') {
+        res.status(400).json({
+          error: {
+            code: "MISSING_TOKEN",
+            message: "QR token is required",
+          },
+        });
+        return;
+      }
+
+      // Validate user
+      if (!req.user || !req.user.userId) {
+        res.status(401).json({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "User authentication required",
+          },
+        });
+        return;
+      }
+
+      const scannerId = req.user.userId;
       const result = await checkinService.scanQRCode(token, scannerId);
       
       if (result.alreadyCheckedIn) {
@@ -22,9 +45,21 @@ export const checkinController = {
   async getCheckInHistory(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { eventId } = req.query;
-      const organizerId = req.user!.userId;
       
-      if (!eventId) {
+      // Validate user
+      if (!req.user || !req.user.userId) {
+        res.status(401).json({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "User authentication required",
+          },
+        });
+        return;
+      }
+
+      const organizerId = req.user.userId;
+      
+      if (!eventId || typeof eventId !== 'string' || eventId.trim() === '') {
         res.status(400).json({
           error: {
             code: "MISSING_EVENT_ID",
@@ -35,7 +70,7 @@ export const checkinController = {
       }
 
       const result = await checkinService.getCheckInHistory(
-        eventId as string,
+        eventId,
         organizerId,
         req.query
       );
