@@ -23,7 +23,7 @@ export default function MyEventsPage() {
         setLoading(true)
         const res = await api.myRegistrations({ limit: 50 })
         console.log('My Registrations API Response:', res)
-        
+
         // API wrapper extracts 'data' field, so res is already an array
         const registrationItems = Array.isArray(res) ? res : (res?.data || res?.items || [])
         console.log('Loaded registrations:', registrationItems)
@@ -42,15 +42,15 @@ export default function MyEventsPage() {
   const now = new Date()
 
   const upcomingEvents = registrations.filter(r =>
-    typeof r.eventId === "object" &&
+    r.eventId && typeof r.eventId === "object" &&
     "startTime" in r.eventId &&
     new Date(r.eventId.startTime) > now
   )
 
   const pastEvents = registrations.filter(r =>
-    typeof r.eventId === "object" &&
+    r.eventId && typeof r.eventId === "object" &&
     "endTime" in r.eventId &&
-    new Date(r.eventId.endTime) < now
+    new Date(r.eventId.startTime) < now
   )
 
   return (

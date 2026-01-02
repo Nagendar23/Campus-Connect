@@ -22,10 +22,10 @@ import {
   FileText,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { api, type Event as ApiEvent } from "@/lib/api"
+import { api, type Event as ApiEvent, getAccessToken } from "@/lib/api"
 
 export default function QRScannerPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const [events, setEvents] = useState<ApiEvent[]>([])
   const [selectedEvent, setSelectedEvent] = useState<string>("")
@@ -33,6 +33,7 @@ export default function QRScannerPage() {
   const [bulkMode, setBulkMode] = useState(false)
   const [manualTicketId, setManualTicketId] = useState("")
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   const [stats, setStats] = useState({
     checkedIn: 0,
@@ -62,11 +63,20 @@ export default function QRScannerPage() {
 
   /* ---------------- LOAD ORGANIZER EVENTS ---------------- */
   useEffect(() => {
-    if (!user) return
+    if (!user || authLoading) return
 
     const loadEvents = async () => {
       try {
         setLoading(true)
+        setAuthError(null) // Clear any previous auth errors
+        
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+          setAuthError('No authentication token found. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        
         const res = await api.getOrganizerEvents(user._id, {
           limit: 100,
         })
@@ -77,15 +87,20 @@ export default function QRScannerPage() {
         if (items.length > 0) {
           setSelectedEvent(items[0]._id)
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load events:", err)
+        
+        // Check if it's an authentication error
+        if (err?.status === 401 || err?.code === 'UNAUTHENTICATED' || err?.code === 'INVALID_TOKEN') {
+          setAuthError('Authentication failed. Please refresh the page and log in again.');
+        }
       } finally {
         setLoading(false)
       }
     }
 
     loadEvents()
-  }, [user])
+  }, [user, authLoading])
 
   /* ---------------- LOAD STATS ---------------- */
   useEffect(() => {
@@ -116,8 +131,39 @@ export default function QRScannerPage() {
 
   /* ---------------- HANDLE QR SCAN ---------------- */
   const handleScanResult = async (token: string) => {
+    console.log('[Scanner] Handle QR scan result called');
+    console.log('[Scanner] User state:', { hasUser: !!user, userId: user?._id, role: user?.role });
+    console.log('[Scanner] Auth loading:', authLoading);
+    console.log('[Scanner] Token preview:', token.substring(0, 30) + '...');
+    
+    // Check if user is authenticated
+    if (!user) {
+      console.error('[Scanner] No user object available');
+      setAuthError('You are not logged in. Please refresh the page and log in again.');
+      setScanResult({
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      });
+      return;
+    }
+
+    const accessToken = getAccessToken();
+    console.log('[Scanner] Access token:', accessToken ? 'Present' : 'Missing');
+    
+    if (!accessToken) {
+      console.error('[Scanner] No access token available');
+      setAuthError('Session expired. Please log in again.');
+      setScanResult({
+        success: false,
+        message: 'Session expired. Please log in again.',
+      });
+      return;
+    }
+
     try {
+      console.log('[Scanner] Attempting to scan QR code');
       const res = await api.scanQRCode({ token })
+      console.log('[Scanner] Check-in successful:', res);
 
       const event =
         typeof res.event === "object"
@@ -156,9 +202,38 @@ export default function QRScannerPage() {
         ])
       }
     } catch (err: any) {
+      console.error('[Scanner] Check-in failed:', err);
+      console.error('[Scanner] Error details:', {
+        status: err?.status,
+        code: err?.code,
+        message: err?.message,
+        data: err?.data
+      });
+      
+      let errorMessage = "Check-in failed";
+      
+      // Extract user-friendly error message
+      if (err?.getUserMessage) {
+        errorMessage = err.getUserMessage();
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      // Check for authentication errors - be more specific
+      const isAuthError = err?.status === 401 && (
+                          err?.code === 'UNAUTHENTICATED' || 
+                          err?.code === 'INVALID_TOKEN' ||
+                          errorMessage.toLowerCase().includes('missing authentication') ||
+                          errorMessage.toLowerCase().includes('invalid or expired'));
+      
+      if (isAuthError) {
+        setAuthError('Authentication failed. Please refresh the page and log in again.');
+        errorMessage = 'Session expired. Please log in again.';
+      }
+      
       setScanResult({
         success: false,
-        message: err.message || "Check-in failed",
+        message: errorMessage,
       })
     }
 
@@ -171,15 +246,78 @@ export default function QRScannerPage() {
   const handleManualCheckIn = async () => {
     if (!manualTicketId.trim()) return
 
+    console.log('[Manual Check-in] Starting manual check-in');
+    console.log('[Manual Check-in] Ticket ID:', manualTicketId);
+    console.log('[Manual Check-in] User state:', { hasUser: !!user, userId: user?._id, role: user?.role });
+    console.log('[Manual Check-in] Auth loading:', authLoading);
+
+    // Check if user is authenticated
+    if (!user) {
+      console.error('[Manual Check-in] No user object available');
+      setAuthError('You are not logged in. Please refresh the page and log in again.');
+      setScanResult({
+        success: false,
+        message: 'Authentication error. Please log in again.',
+      });
+      setTimeout(() => setScanResult(null), 4000);
+      return;
+    }
+
+    const accessToken = getAccessToken();
+    console.log('[Manual Check-in] Access token:', accessToken ? 'Present' : 'Missing');
+    
+    if (!accessToken) {
+      console.error('[Manual Check-in] No access token available');
+      setAuthError('Session expired. Please log in again.');
+      setScanResult({
+        success: false,
+        message: 'Session expired. Please log in again.',
+      });
+      setTimeout(() => setScanResult(null), 4000);
+      return;
+    }
+
     try {
+      console.log('[Manual Check-in] Fetching ticket QR code');
       const qr = await api.getTicketQRCode(manualTicketId.trim())
+      console.log('[Manual Check-in] Got QR token, proceeding to scan');
       await handleScanResult(qr.token)
       setManualTicketId("")
     } catch (err: any) {
+      console.error('[Manual Check-in] Failed:', err);
+      console.error('[Manual Check-in] Error details:', {
+        status: err?.status,
+        code: err?.code,
+        message: err?.message,
+        data: err?.data
+      });
+      
+      let errorMessage = "Invalid ticket";
+      
+      // Extract user-friendly error message
+      if (err?.getUserMessage) {
+        errorMessage = err.getUserMessage();
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      // Check for authentication errors - be more specific  
+      const isAuthError = err?.status === 401 && (
+                          err?.code === 'UNAUTHENTICATED' || 
+                          err?.code === 'INVALID_TOKEN' ||
+                          errorMessage.toLowerCase().includes('missing authentication') ||
+                          errorMessage.toLowerCase().includes('invalid or expired'));
+      
+      if (isAuthError) {
+        setAuthError('Authentication failed. Please refresh the page and log in again.');
+        errorMessage = 'Session expired. Please log in again.';
+      }
+      
       setScanResult({
         success: false,
-        message: err.message || "Invalid ticket",
+        message: errorMessage,
       })
+      setTimeout(() => setScanResult(null), 4000)
     }
   }
 
@@ -204,6 +342,39 @@ export default function QRScannerPage() {
 
           <main className="flex-1 p-6">
             <div className="max-w-6xl mx-auto space-y-6">
+
+              {/* AUTHENTICATION ERROR ALERT */}
+              {authError && (
+                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 text-red-500">
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-red-500">Authentication Error</h3>
+                      <p className="text-sm text-red-500/90 mt-1">{authError}</p>
+                      <Button 
+                        onClick={() => window.location.reload()} 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2 border-red-500/20 text-red-500 hover:bg-red-500/10"
+                      >
+                        Refresh Page
+                      </Button>
+                    </div>
+                    <button 
+                      onClick={() => setAuthError(null)} 
+                      className="text-red-500/60 hover:text-red-500"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* HEADER */}
               <div className="flex justify-between items-center">
@@ -271,8 +442,12 @@ export default function QRScannerPage() {
                     placeholder="Enter Ticket ID (e.g., TKT-... or MongoID)"
                     value={manualTicketId}
                     onChange={(e) => setManualTicketId(e.target.value)}
+                    disabled={authLoading || loading || !!authError}
                   />
-                  <Button onClick={handleManualCheckIn} disabled={loading || !manualTicketId}>
+                  <Button 
+                    onClick={handleManualCheckIn} 
+                    disabled={authLoading || loading || !manualTicketId || !!authError}
+                  >
                     Check In
                   </Button>
                 </CardContent>
@@ -294,6 +469,7 @@ export default function QRScannerPage() {
                   <Button
                     onClick={() => setIsScanning((v) => !v)}
                     className={isScanning ? "bg-red-500" : ""}
+                    disabled={authLoading || loading || !!authError || !selectedEvent}
                   >
                     {isScanning ? (
                       <>
@@ -307,6 +483,12 @@ export default function QRScannerPage() {
                       </>
                     )}
                   </Button>
+
+                  {!selectedEvent && (
+                    <p className="text-sm text-muted-foreground">
+                      Please select an event to start scanning
+                    </p>
+                  )}
 
                   {isScanning && (
                     <div className="border rounded-lg p-4">

@@ -12,11 +12,18 @@ export function validate(schema: ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // Format error messages in a more user-friendly way
+        const formattedErrors = error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message,
+          code: err.code,
+        }));
+
         res.status(400).json({
           error: {
             code: "VALIDATION_ERROR",
             message: "Invalid request data",
-            details: error.errors,
+            details: formattedErrors,
           },
         });
         return;

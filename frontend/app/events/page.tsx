@@ -36,10 +36,10 @@ export default function EventsPage() {
         })
 
         console.log('All Events API Response:', res)
-        
+
         // Handle both response formats
-        const items = Array.isArray(res?.data) ? res.data : 
-                      Array.isArray(res?.items) ? res.items : []
+        const items = Array.isArray(res?.data) ? res.data :
+          Array.isArray(res?.items) ? res.items : []
         const totalCount = res?.meta?.total || res?.total || items.length
 
         console.log(`Loaded ${items.length} events for students`)
@@ -150,10 +150,11 @@ export default function EventsPage() {
 
               {/* Events Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {loading &&
-                  Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-60 rounded-lg bg-muted animate-pulse" />
-                  ))}
+                {loading && (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-muted-foreground">Loading events...</p>
+                  </div>
+                )}
 
                 {!loading && events.length > 0 &&
                   events.map((event) => (
@@ -169,13 +170,6 @@ export default function EventsPage() {
                     </p>
                   </div>
                 )}
-              </div>
-
-              {/* Load More */}
-              <div className="text-center">
-                <Button variant="outline" className="bg-transparent">
-                  Load More Events
-                </Button>
               </div>
             </div>
           </main>

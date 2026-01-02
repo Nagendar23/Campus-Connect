@@ -29,7 +29,7 @@ export const checkinService = {
       const ticket = await Ticket.findById(ticketId)
         .populate("userId", "name email avatarUrl")
         .populate("eventId");
-      
+
       if (!ticket) {
         throw new AppError(404, "TICKET_NOT_FOUND", "Ticket not found. This QR code may be invalid or the ticket has been deleted.");
       }
@@ -123,19 +123,30 @@ export const checkinService = {
 
       const { skip, limit, page } = parsePagination(query);
 
-      // Find all tickets for this event with error handling
-      const [tickets, total] = await Promise.all([
-        Ticket.find({ eventId, checkedInAt: { $ne: null } })
-          .sort({ checkedInAt: -1 })
+      // 1. Find all ticket IDs for this event
+      const eventTickets = await Ticket.find({ eventId }).select('_id');
+      const eventTicketIds = eventTickets.map(t => t._id);
+
+      // 2. Find logs associated with these tickets
+      const [logs, total] = await Promise.all([
+        CheckInLog.find({ ticketId: { $in: eventTicketIds } })
+          .sort({ timestamp: -1 })
           .skip(skip)
           .limit(limit)
-          .populate("userId", "name email")
+          .populate({
+            path: 'ticketId',
+            populate: {
+              path: 'userId',
+              select: 'name email avatarUrl'
+            }
+          })
+          .populate('scannerId', 'name')
           .lean(),
-        Ticket.countDocuments({ eventId, checkedInAt: { $ne: null } })
+        CheckInLog.countDocuments({ ticketId: { $in: eventTicketIds } })
       ]);
 
       return {
-        data: tickets,
+        data: logs,
         meta: buildPaginationMeta(total, page, limit),
       };
     } catch (error) {

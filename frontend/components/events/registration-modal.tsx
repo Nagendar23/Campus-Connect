@@ -253,7 +253,7 @@ export function RegistrationModal({ isOpen, onClose, onSuccess, event }: Registr
 
               <div className="space-y-3">
                 <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
-                  View My Tickets
+                  View Ticket
                 </Button>
                 <Button variant="outline" onClick={handleClose} className="w-full bg-transparent">
                   Continue Browsing Events

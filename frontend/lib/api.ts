@@ -9,15 +9,34 @@ export class ApiError extends Error {
   status: number;
   data: unknown;
   code?: string;
+  details?: any;
   constructor(message: string, status: number, data: unknown) {
     super(message);
     this.status = status;
     this.data = data;
+    this.name = "ApiError";
+    
+    // Extract error information from backend response
     if (typeof data === 'object' && data && 'error' in data) {
       const errorData = data as any;
       this.code = errorData.error?.code;
       this.message = errorData.error?.message || message;
+      this.details = errorData.error?.details;
     }
+  }
+
+  // Helper method to get user-friendly error message
+  getUserMessage(): string {
+    if (this.details && Array.isArray(this.details)) {
+      // Format validation errors
+      const messages = this.details.map((d: any) => d.message || d.field).filter(Boolean);
+      if (messages.length > 0) {
+        return messages.join(', ');
+      }
+    }
+    
+    // Return the main error message
+    return this.message;
   }
 }
 
@@ -71,6 +90,8 @@ async function request<T>(path: string, options: { method?: HttpMethod; body?: a
 
   if (token && !skipAuth) {
     requestHeaders["Authorization"] = `Bearer ${token}`;
+  } else if (!skipAuth) {
+    console.warn('No access token available for request:', path);
   }
 
   const res = await fetch(`${BASE_URL}/api${path}`.replace(/\/$/, ""), {
@@ -90,6 +111,15 @@ async function request<T>(path: string, options: { method?: HttpMethod; body?: a
   }
 
   if (!res.ok) {
+    // Log error for debugging
+    console.error('API Request Failed:', {
+      path,
+      method,
+      status: res.status,
+      statusText: res.statusText,
+      data,
+    });
+
     // Try to refresh token if unauthorized
     if (res.status === 401 && !skipAuth && path !== '/auth/refresh' && path !== '/auth/login') {
       const newToken = await refreshAccessToken();

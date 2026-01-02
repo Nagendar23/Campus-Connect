@@ -37,7 +37,7 @@ export default function EventDetailsPage() {
         const e = (response as any).data || response
         console.log('Event Details:', e)
         setEventData(e)
-        
+
         // Check if user is already registered
         try {
           const registrations = await api.myRegistrations({ limit: 100 })
@@ -46,13 +46,16 @@ export default function EventDetailsPage() {
           const userRegistrations = Array.isArray(registrations) ? registrations : (registrations.data || registrations.items || [])
           console.log('User registrations:', userRegistrations)
           console.log('Looking for event ID:', id)
-          
+
           const existingReg = userRegistrations.find((reg: any) => {
-            const regEventId = typeof reg.eventId === 'object' ? reg.eventId._id : reg.eventId
-            console.log('Comparing:', regEventId, 'with', id)
-            return regEventId === id
+            const regEventId = reg.eventId && typeof reg.eventId === 'object'
+              ? (reg.eventId._id || reg.eventId.id)
+              : reg.eventId
+
+            console.log('Comparing IDs:', { regEventId: String(regEventId), pageId: String(id) })
+            return String(regEventId) === String(id)
           })
-          
+
           if (existingReg) {
             console.log('Found existing registration:', existingReg)
             setIsRegistered(true)
@@ -79,7 +82,7 @@ export default function EventDetailsPage() {
 
   const handleRegistration = async () => {
     if (!eventData) return
-    
+
     try {
       // If paid event, open payment modal
       if (eventData.isPaid && eventData.price && eventData.price > 0) {
@@ -90,12 +93,12 @@ export default function EventDetailsPage() {
         const registration = (result as any).data || result
         setRegistrationId(registration._id)
         setIsRegistered(true)
-        
+
         // Refresh event data to get updated registration count
         const response = await api.getEvent(id)
         const e = (response as any).data || response
         setEventData(e)
-        
+
         alert('Successfully registered for the event!')
       }
     } catch (error) {
@@ -108,7 +111,7 @@ export default function EventDetailsPage() {
     setRegistrationId(regId)
     setIsRegistered(true)
     setIsRegistrationOpen(false)
-    
+
     // Refresh event data to get updated registration count
     try {
       const response = await api.getEvent(id)
@@ -140,26 +143,26 @@ export default function EventDetailsPage() {
   // Format date and time
   const startDate = new Date(eventData.startTime)
   const endDate = new Date(eventData.endTime)
-  const formattedDate = startDate.toLocaleDateString('en-US', { 
+  const formattedDate = startDate.toLocaleDateString('en-US', {
     weekday: 'long',
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
   })
-  const formattedStartTime = startDate.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
+  const formattedStartTime = startDate.toLocaleTimeString('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true 
+    hour12: true
   })
-  const formattedEndTime = endDate.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
+  const formattedEndTime = endDate.toLocaleTimeString('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true 
+    hour12: true
   })
 
   // Get organizer name
-  const organizerName = typeof eventData.organizerId === 'object' && eventData.organizerId 
-    ? eventData.organizerId.name 
+  const organizerName = typeof eventData.organizerId === 'object' && eventData.organizerId
+    ? eventData.organizerId.name
     : 'Campus Events'
 
   return (
@@ -324,12 +327,12 @@ export default function EventDetailsPage() {
                             <p className="text-sm text-muted-foreground">
                               You're registered for this event! Check your email for confirmation.
                             </p>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               className="w-full bg-transparent"
                               onClick={() => registrationId && router.push(`/ticket/${registrationId}`)}
                             >
-                              View My Ticket
+                              View Ticket
                             </Button>
                           </div>
                         ) : (
@@ -388,7 +391,7 @@ export default function EventDetailsPage() {
             </div>
           </main>
         </div>
-      </div>
+      </div >
 
       <RegistrationModal
         isOpen={isRegistrationOpen}
@@ -396,6 +399,6 @@ export default function EventDetailsPage() {
         onSuccess={handleRegistrationSuccess}
         event={eventData}
       />
-    </AuthGuard>
+    </AuthGuard >
   )
 }

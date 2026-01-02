@@ -21,10 +21,15 @@ export function authenticate(
       : null;
 
     if (!token) {
+      console.log('Authentication failed - No token provided');
+      console.log('Authorization header:', header ? `Present (${header.substring(0, 20)}...)` : 'Missing');
+      console.log('Request path:', req.path);
+      console.log('Request method:', req.method);
       res.status(401).json({
         error: {
           code: "UNAUTHENTICATED",
-          message: "Missing authentication token",
+          message: "Missing authentication token. Please log in again.",
+          details: "No bearer token found in authorization header"
         },
       });
       return;
@@ -34,10 +39,13 @@ export function authenticate(
     (req as AuthRequest).user = payload;
     next();
   } catch (error) {
+    console.log('Authentication failed - Invalid token');
+    console.log('Error:', error instanceof Error ? error.message : error);
     res.status(401).json({
       error: {
         code: "INVALID_TOKEN",
-        message: "Invalid or expired token",
+        message: "Invalid or expired authentication token. Please log in again.",
+        details: error instanceof Error ? error.message : "Token verification failed"
       },
     });
   }

@@ -236,7 +236,7 @@ export default function AnalyticsPage() {
                         <CardDescription>Event registrations over time</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <AnalyticsChart />
+                        <AnalyticsChart events={events}/>
                       </CardContent>
                     </Card>
 

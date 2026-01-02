@@ -10,6 +10,7 @@ import { Calendar, Mail, Lock, User, Building, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { handleApiError } from "@/lib/error-handler"
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -78,7 +79,8 @@ export default function SignupPage() {
         router.push("/organizer")
       }
     } catch (err: any) {
-      setError(err.message || "Signup failed. Please try again.")
+      console.error('Signup error:', err);
+      setError(handleApiError(err));
       setIsLoading(false)
     }
   }

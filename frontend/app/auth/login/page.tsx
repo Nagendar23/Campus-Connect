@@ -10,6 +10,7 @@ import { Calendar, Mail, Lock, User, Building, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { handleApiError } from "@/lib/error-handler"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -39,7 +40,8 @@ export default function LoginPage() {
         router.push("/organizer")
       }
     } catch (err: any) {
-      setError(err.message || "Login failed. Please check your credentials.")
+      console.error('Login error:', err);
+      setError(handleApiError(err));
       setIsLoading(false)
     }
   }

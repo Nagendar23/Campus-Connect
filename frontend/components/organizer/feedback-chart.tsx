@@ -9,16 +9,17 @@ import {
   YAxis,
 } from "recharts"
 
-const data = [
-  { event: "Event 1", rating: 4.2, responses: 45 },
-  { event: "Event 2", rating: 4.5, responses: 67 },
-  { event: "Event 3", rating: 4.1, responses: 32 },
-  { event: "Event 4", rating: 4.8, responses: 89 },
-  { event: "Event 5", rating: 4.6, responses: 56 },
-  { event: "Event 6", rating: 4.9, responses: 78 },
-]
+const data: any[] = []
 
 export function FeedbackChart() {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[300px] w-full items-center justify-center text-muted-foreground">
+        No feedback data available yet
+      </div>
+    )
+  }
+
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>

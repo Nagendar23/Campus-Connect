@@ -28,7 +28,7 @@ export default function AttendeesPage() {
 
       try {
         setLoading(true)
-        const eventsRes = await api.getOrganizerEvents(user._id, { 
+        const eventsRes = await api.getOrganizerEvents(user._id, {
           limit: 100
         })
         setEvents(eventsRes.data || [])
@@ -51,7 +51,12 @@ export default function AttendeesPage() {
 
       try {
         const registrations = await api.getEventRegistrations(selectedEvent, { limit: 500 })
-        setAttendees(registrations.data || registrations.items || [])
+
+        // Handle API response which might be the direct array (due to api.ts unwrapping) or a paginated object
+        // @ts-ignore - Types might mismatch with actual runtime behavior of api.ts unwrapping
+        const items = Array.isArray(registrations) ? registrations : (registrations.data || registrations.items || [])
+
+        setAttendees(items)
       } catch (error) {
         console.error("Failed to load attendees:", error)
       }
@@ -63,11 +68,11 @@ export default function AttendeesPage() {
   const filteredAttendees = attendees.filter((attendee) => {
     const userInfo = typeof attendee.userId === 'object' ? attendee.userId : null
     if (!userInfo) return false
-    
+
     const name = userInfo.name?.toLowerCase() || ''
     const email = userInfo.email?.toLowerCase() || ''
     const search = searchTerm.toLowerCase()
-    
+
     return name.includes(search) || email.includes(search)
   })
 
@@ -98,7 +103,7 @@ export default function AttendeesPage() {
                   <CardDescription>Choose an event to view its attendees</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <select 
+                  <select
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                     value={selectedEvent || ""}
                     onChange={(e) => setSelectedEvent(e.target.value)}
@@ -123,8 +128,8 @@ export default function AttendeesPage() {
                     </div>
                     <div className="relative w-64">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Search by name or email" 
+                      <Input
+                        placeholder="Search by name or email"
                         className="pl-10"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -152,12 +157,17 @@ export default function AttendeesPage() {
                       <TableBody>
                         {filteredAttendees.map((attendee) => {
                           const userInfo = typeof attendee.userId === 'object' ? attendee.userId : null
+                          // Handle ticketId which might be populated as an object
+                          const ticketId = typeof attendee.ticketId === 'object' && attendee.ticketId
+                            ? (attendee.ticketId as any)._id
+                            : attendee.ticketId
+
                           return (
                             <TableRow key={attendee._id}>
                               <TableCell className="font-medium">{userInfo?.name || 'N/A'}</TableCell>
                               <TableCell>{userInfo?.email || 'N/A'}</TableCell>
                               <TableCell>
-                                <Badge 
+                                <Badge
                                   variant={attendee.status === 'confirmed' ? 'default' : 'secondary'}
                                   className={attendee.status === 'confirmed' ? 'bg-green-500/10 text-green-500 border-green-500/20' : ''}
                                 >
@@ -165,7 +175,7 @@ export default function AttendeesPage() {
                                 </Badge>
                               </TableCell>
                               <TableCell>{new Date(attendee.createdAt || '').toLocaleDateString()}</TableCell>
-                              <TableCell className="font-mono text-xs">{attendee.ticketId?.slice(0, 8) || 'N/A'}</TableCell>
+                              <TableCell className="font-mono text-xs">{ticketId?.slice(0, 8) || 'N/A'}</TableCell>
                               <TableCell>
                                 <Button variant="ghost" size="sm">
                                   <Mail className="h-4 w-4" />

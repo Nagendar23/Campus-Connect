@@ -25,7 +25,7 @@ export default function StudentDashboard() {
     const loadData = async () => {
       try {
         setLoading(true)
-        
+
         // Load user's registrations
         const regsData = await api.myRegistrations({ limit: 10 })
         console.log('Dashboard Registrations API Response:', regsData)
@@ -35,9 +35,9 @@ export default function StudentDashboard() {
         setMyRegistrations(myRegs)
 
         // Load upcoming events
-        const eventsData = await api.listEvents({ 
+        const eventsData = await api.listEvents({
           status: 'published',
-          limit: 6 
+          limit: 6
         })
         console.log('Dashboard Events API Response:', eventsData)
         const eventItems = eventsData.data || eventsData.items || []
@@ -57,13 +57,13 @@ export default function StudentDashboard() {
 
   const registeredCount = myRegistrations.length
   const attendedCount = myRegistrations.filter(r => {
-    if (typeof r.eventId === 'object' && 'endTime' in r.eventId) {
+    if (r.eventId && typeof r.eventId === 'object' && 'endTime' in r.eventId) {
       return new Date(r.eventId.endTime) < new Date()
     }
     return false
   }).length
   const upcomingCount = myRegistrations.filter(r => {
-    if (typeof r.eventId === 'object' && 'startTime' in r.eventId) {
+    if (r.eventId && typeof r.eventId === 'object' && 'startTime' in r.eventId) {
       return new Date(r.eventId.startTime) > new Date()
     }
     return false
@@ -94,11 +94,10 @@ export default function StudentDashboard() {
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatsCard title="Registered Events" value={registeredCount.toString()} icon={Ticket} trend={`${registeredCount} total`} />
-                <StatsCard title="Attended Events" value={attendedCount.toString()} icon={Clock} trend={registeredCount > 0 ? `${Math.round((attendedCount/registeredCount)*100)}% attendance rate` : 'No events yet'} />
+                <StatsCard title="Attended Events" value={attendedCount.toString()} icon={Clock} trend={registeredCount > 0 ? `${Math.round((attendedCount / registeredCount) * 100)}% attendance rate` : 'No events yet'} />
                 <StatsCard title="Upcoming Events" value={upcomingCount.toString()} icon={Calendar} trend={upcomingCount > 0 ? 'Stay tuned!' : 'Register now'} />
-                <StatsCard title="Average Rating" value={myRegistrations.length > 0 ? "4.8" : "-"} icon={Star} trend="Based on feedback" />
               </div>
 
               {/* Quick Actions */}
@@ -154,7 +153,7 @@ export default function StudentDashboard() {
                       {myRegistrations.slice(0, 3).map((registration) => {
                         const event = typeof registration.eventId === 'object' ? registration.eventId : null
                         if (!event) return null
-                        
+
                         return (
                           <div
                             key={registration._id}

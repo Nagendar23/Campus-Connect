@@ -54,8 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await api.login({ email, password })
       setUser(result.user)
     } catch (err: any) {
-      setError(err.message || "Login failed")
-      throw err
+      const errorMessage = err instanceof Error && 'getUserMessage' in err 
+        ? (err as any).getUserMessage() 
+        : err.message || "Login failed. Please check your credentials."
+      setError(errorMessage)
+      throw new Error(errorMessage)
     }
   }
 
@@ -65,8 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await api.signup({ name, email, password, role })
       setUser(result.user)
     } catch (err: any) {
-      setError(err.message || "Signup failed")
-      throw err
+      const errorMessage = err instanceof Error && 'getUserMessage' in err 
+        ? (err as any).getUserMessage() 
+        : err.message || "Signup failed. Please try again."
+      setError(errorMessage)
+      throw new Error(errorMessage)
     }
   }
 
