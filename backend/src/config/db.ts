@@ -4,7 +4,7 @@ import { config } from "./env";
 export async function connectDB() {
   try {
     await mongoose.connect(config.mongoUri);
-    const dbName = mongoose.connection.db.databaseName;
+    const dbName = mongoose.connection.db?.databaseName;
     console.log(`✓ MongoDB connected successfully`);
     console.log(`✓ Connected to database: ${dbName}`);
   } catch (error) {
