@@ -16,9 +16,10 @@ import { api, type CheckInLog } from "@/lib/api"
 
 interface CheckInHistoryProps {
   eventId: string
+  refreshTrigger?: number
 }
 
-export function CheckInHistory({ eventId }: CheckInHistoryProps) {
+export function CheckInHistory({ eventId, refreshTrigger = 0 }: CheckInHistoryProps) {
   const [checkIns, setCheckIns] = useState<CheckInLog[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -38,7 +39,7 @@ export function CheckInHistory({ eventId }: CheckInHistoryProps) {
     }
 
     loadCheckIns()
-  }, [eventId])
+  }, [eventId, refreshTrigger])
 
   if (loading) {
     return (
@@ -85,9 +86,9 @@ export function CheckInHistory({ eventId }: CheckInHistoryProps) {
                     <AvatarFallback className="text-xs">
                       {user?.name
                         ? user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
                         : "?"}
                     </AvatarFallback>
                   </Avatar>

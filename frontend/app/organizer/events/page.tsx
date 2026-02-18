@@ -21,23 +21,18 @@ export default function OrganizerEventsPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
+    let mounted = true
     const loadEvents = async () => {
-      if (!user || !user._id) {
-        console.error('My Events: User or user ID is missing', user)
-        return
-      }
+      if (!user?._id) return
 
       try {
         setLoading(true)
-        const eventsRes = await api.getOrganizerEvents(user._id, { 
+        const eventsRes = await api.getOrganizerEvents(user._id, {
           limit: 100
         })
-        
-        // Debug: log the response
-        if (process.env.NODE_ENV === 'development') {
-          console.log('My Events API Response:', eventsRes)
-        }
-        
+
+        if (!mounted) return
+
         // Handle both response formats
         let myEvents: any[] = []
         if (eventsRes) {
@@ -49,18 +44,24 @@ export default function OrganizerEventsPage() {
             myEvents = eventsRes
           }
         }
-        
+
         console.log(`My Events: Loaded ${myEvents.length} events`)
         setEvents(myEvents)
       } catch (error) {
         console.error("Failed to load events:", error)
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
 
     loadEvents()
-  }, [user])
+
+    return () => {
+      mounted = false
+    }
+  }, [user?._id])
 
   const stats = {
     total: events.length,
@@ -149,8 +150,8 @@ export default function OrganizerEventsPage() {
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Search events by title, date, or status..." 
+                      <Input
+                        placeholder="Search events by title, date, or status..."
                         className="pl-10"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}

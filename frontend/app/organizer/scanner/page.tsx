@@ -26,6 +26,7 @@ import { api, type Event as ApiEvent, getAccessToken } from "@/lib/api"
 
 export default function QRScannerPage() {
   const { user, loading: authLoading } = useAuth()
+  const [refreshHistory, setRefreshHistory] = useState(0)
 
   const [events, setEvents] = useState<ApiEvent[]>([])
   const [selectedEvent, setSelectedEvent] = useState<string>("")
@@ -69,14 +70,14 @@ export default function QRScannerPage() {
       try {
         setLoading(true)
         setAuthError(null) // Clear any previous auth errors
-        
+
         const accessToken = getAccessToken();
         if (!accessToken) {
           setAuthError('No authentication token found. Please log in again.');
           setLoading(false);
           return;
         }
-        
+
         const res = await api.getOrganizerEvents(user._id, {
           limit: 100,
         })
@@ -89,7 +90,7 @@ export default function QRScannerPage() {
         }
       } catch (err: any) {
         console.error("Failed to load events:", err)
-        
+
         // Check if it's an authentication error
         if (err?.status === 401 || err?.code === 'UNAUTHENTICATED' || err?.code === 'INVALID_TOKEN') {
           setAuthError('Authentication failed. Please refresh the page and log in again.');
@@ -135,7 +136,7 @@ export default function QRScannerPage() {
     console.log('[Scanner] User state:', { hasUser: !!user, userId: user?._id, role: user?.role });
     console.log('[Scanner] Auth loading:', authLoading);
     console.log('[Scanner] Token preview:', token.substring(0, 30) + '...');
-    
+
     // Check if user is authenticated
     if (!user) {
       console.error('[Scanner] No user object available');
@@ -149,7 +150,7 @@ export default function QRScannerPage() {
 
     const accessToken = getAccessToken();
     console.log('[Scanner] Access token:', accessToken ? 'Present' : 'Missing');
-    
+
     if (!accessToken) {
       console.error('[Scanner] No access token available');
       setAuthError('Session expired. Please log in again.');
@@ -189,6 +190,9 @@ export default function QRScannerPage() {
         checkedIn: prev.checkedIn + 1,
       }))
 
+      // Trigger history refresh
+      setRefreshHistory(prev => prev + 1)
+
       if (bulkMode) {
         setBulkResults((prev) => [
           {
@@ -209,28 +213,28 @@ export default function QRScannerPage() {
         message: err?.message,
         data: err?.data
       });
-      
+
       let errorMessage = "Check-in failed";
-      
+
       // Extract user-friendly error message
       if (err?.getUserMessage) {
         errorMessage = err.getUserMessage();
       } else if (err?.message) {
         errorMessage = err.message;
       }
-      
+
       // Check for authentication errors - be more specific
       const isAuthError = err?.status === 401 && (
-                          err?.code === 'UNAUTHENTICATED' || 
-                          err?.code === 'INVALID_TOKEN' ||
-                          errorMessage.toLowerCase().includes('missing authentication') ||
-                          errorMessage.toLowerCase().includes('invalid or expired'));
-      
+        err?.code === 'UNAUTHENTICATED' ||
+        err?.code === 'INVALID_TOKEN' ||
+        errorMessage.toLowerCase().includes('missing authentication') ||
+        errorMessage.toLowerCase().includes('invalid or expired'));
+
       if (isAuthError) {
         setAuthError('Authentication failed. Please refresh the page and log in again.');
         errorMessage = 'Session expired. Please log in again.';
       }
-      
+
       setScanResult({
         success: false,
         message: errorMessage,
@@ -265,7 +269,7 @@ export default function QRScannerPage() {
 
     const accessToken = getAccessToken();
     console.log('[Manual Check-in] Access token:', accessToken ? 'Present' : 'Missing');
-    
+
     if (!accessToken) {
       console.error('[Manual Check-in] No access token available');
       setAuthError('Session expired. Please log in again.');
@@ -291,28 +295,28 @@ export default function QRScannerPage() {
         message: err?.message,
         data: err?.data
       });
-      
+
       let errorMessage = "Invalid ticket";
-      
+
       // Extract user-friendly error message
       if (err?.getUserMessage) {
         errorMessage = err.getUserMessage();
       } else if (err?.message) {
         errorMessage = err.message;
       }
-      
+
       // Check for authentication errors - be more specific  
       const isAuthError = err?.status === 401 && (
-                          err?.code === 'UNAUTHENTICATED' || 
-                          err?.code === 'INVALID_TOKEN' ||
-                          errorMessage.toLowerCase().includes('missing authentication') ||
-                          errorMessage.toLowerCase().includes('invalid or expired'));
-      
+        err?.code === 'UNAUTHENTICATED' ||
+        err?.code === 'INVALID_TOKEN' ||
+        errorMessage.toLowerCase().includes('missing authentication') ||
+        errorMessage.toLowerCase().includes('invalid or expired'));
+
       if (isAuthError) {
         setAuthError('Authentication failed. Please refresh the page and log in again.');
         errorMessage = 'Session expired. Please log in again.';
       }
-      
+
       setScanResult({
         success: false,
         message: errorMessage,
@@ -355,17 +359,17 @@ export default function QRScannerPage() {
                     <div className="flex-1">
                       <h3 className="text-sm font-semibold text-red-500">Authentication Error</h3>
                       <p className="text-sm text-red-500/90 mt-1">{authError}</p>
-                      <Button 
-                        onClick={() => window.location.reload()} 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        onClick={() => window.location.reload()}
+                        variant="outline"
+                        size="sm"
                         className="mt-2 border-red-500/20 text-red-500 hover:bg-red-500/10"
                       >
                         Refresh Page
                       </Button>
                     </div>
-                    <button 
-                      onClick={() => setAuthError(null)} 
+                    <button
+                      onClick={() => setAuthError(null)}
                       className="text-red-500/60 hover:text-red-500"
                     >
                       <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -444,8 +448,8 @@ export default function QRScannerPage() {
                     onChange={(e) => setManualTicketId(e.target.value)}
                     disabled={authLoading || loading || !!authError}
                   />
-                  <Button 
-                    onClick={handleManualCheckIn} 
+                  <Button
+                    onClick={handleManualCheckIn}
                     disabled={authLoading || loading || !manualTicketId || !!authError}
                   >
                     Check In
@@ -499,8 +503,8 @@ export default function QRScannerPage() {
                   {scanResult && (
                     <div
                       className={`p-4 rounded ${scanResult.success
-                          ? "bg-green-500/10"
-                          : "bg-red-500/10"
+                        ? "bg-green-500/10"
+                        : "bg-red-500/10"
                         }`}
                     >
                       <p className="font-medium">{scanResult.message}</p>
@@ -526,7 +530,7 @@ export default function QRScannerPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <CheckInHistory eventId={selectedEvent} />
+                  <CheckInHistory eventId={selectedEvent} refreshTrigger={refreshHistory} />
                 </CardContent>
               </Card>
             </div>

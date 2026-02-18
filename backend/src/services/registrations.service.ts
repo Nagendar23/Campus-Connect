@@ -4,6 +4,8 @@ import { Payment } from "../models/Payment";
 import { Ticket } from "../models/Ticket";
 import { AppError } from "../middlewares/error";
 import { generateQRToken } from "../utils/qr";
+import { emailService } from "./email.service";
+import { User } from "../models/User";
 
 export const registrationsService = {
   async registerForEvent(userId: string, eventId: string) {
@@ -13,8 +15,14 @@ export const registrationsService = {
       throw new AppError(404, "EVENT_NOT_FOUND", "Event not found");
     }
 
+
     if (event.status !== "published") {
       throw new AppError(400, "EVENT_NOT_AVAILABLE", "Event is not available for registration");
+    }
+
+    // Check if event has ended
+    if (new Date(event.endTime) < new Date()) {
+      throw new AppError(400, "EVENT_ENDED", "Event has already ended");
     }
 
     // Check capacity
@@ -77,6 +85,22 @@ export const registrationsService = {
 
       registration.ticketId = ticket._id;
       await registration.save();
+
+      // Send confirmation email
+      try {
+        const user = await User.findById(userId);
+        if (user) {
+          await emailService.sendRegistrationEmail(
+            user.email,
+            user.name,
+            event.title,
+            event.startTime,
+            ticket._id.toString()
+          );
+        }
+      } catch (err) {
+        console.error("Failed to send registration email:", err);
+      }
 
       return {
         registration,

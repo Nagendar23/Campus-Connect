@@ -43,7 +43,7 @@ export default function EventDetailsPage() {
           const registrations = await api.myRegistrations({ limit: 100 })
           console.log('My Registrations Response:', registrations)
           // API wrapper extracts 'data' field, so registrations is already an array
-          const userRegistrations = Array.isArray(registrations) ? registrations : (registrations.data || registrations.items || [])
+          const userRegistrations = registrations
           console.log('User registrations:', userRegistrations)
           console.log('Looking for event ID:', id)
 
@@ -79,6 +79,7 @@ export default function EventDetailsPage() {
   const spotsLeft = eventData ? eventData.capacity - registered : 0
   const isAlmostFull = eventData ? spotsLeft <= eventData.capacity * 0.1 : false
   const isFull = eventData ? spotsLeft <= 0 : false
+  const isCompleted = eventData ? new Date(eventData.endTime) < new Date() : false
 
   const handleRegistration = async () => {
     if (!eventData) return
@@ -128,7 +129,7 @@ export default function EventDetailsPage() {
         <div className="min-h-screen bg-background">
           <Navbar user={user || undefined} />
           <div className="flex">
-            <Sidebar role={user?.role || "student"} />
+            <Sidebar role={(user?.role as "student" | "organizer") || "student"} />
             <main className="flex-1 p-6">
               <div className="max-w-4xl mx-auto">
                 <div className="h-64 rounded-lg bg-muted animate-pulse" />
@@ -170,7 +171,7 @@ export default function EventDetailsPage() {
       <div className="min-h-screen bg-background">
         <Navbar user={user || undefined} />
         <div className="flex">
-          <Sidebar role={user?.role || "student"} />
+          <Sidebar role={(user?.role as "student" | "organizer") || "student"} />
           <main className="flex-1 p-6">
             <div className="max-w-4xl mx-auto space-y-6">
               {/* Event Header */}
@@ -192,6 +193,11 @@ export default function EventDetailsPage() {
                     <Badge variant="secondary" className="bg-white/20 text-white border-white/30 capitalize">
                       {eventData.status}
                     </Badge>
+                    {isCompleted && (
+                      <Badge variant="destructive" className="bg-red-500/80 text-white border-red-500/30">
+                        Completed
+                      </Badge>
+                    )}
                   </div>
                   <h1 className="text-3xl md:text-4xl font-bold text-white text-balance">{eventData.title}</h1>
                   <p className="text-white/90 mt-2">Organized by {organizerName}</p>
@@ -275,7 +281,7 @@ export default function EventDetailsPage() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">{eventData.organizer}</p>
+                          <p className="font-medium">{organizerName}</p>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Star className="h-4 w-4 text-yellow-400 fill-current" />
@@ -300,19 +306,25 @@ export default function EventDetailsPage() {
                           <Badge className="bg-primary/10 text-primary border-primary/20">${eventData.price}</Badge>
                         )}
                       </CardTitle>
-                      <CardDescription>{isFull ? "Event is full" : `${spotsLeft} spots remaining`}</CardDescription>
+                      <CardDescription>
+                        {isCompleted
+                          ? "This event has ended"
+                          : isFull
+                            ? "Event is full"
+                            : `${spotsLeft} spots remaining`}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Registration Progress</span>
-                          <span>{Math.round((eventData.registered / eventData.capacity) * 100)}%</span>
+                          <span>{Math.round((registered / eventData.capacity) * 100)}%</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
                           <div
                             className="bg-primary h-2 rounded-full transition-all"
                             style={{
-                              width: `${(eventData.registered / eventData.capacity) * 100}%`,
+                              width: `${(registered / eventData.capacity) * 100}%`,
                             }}
                           ></div>
                         </div>
@@ -339,9 +351,15 @@ export default function EventDetailsPage() {
                           <Button
                             className="w-full bg-primary hover:bg-primary/90"
                             onClick={handleRegistration}
-                            disabled={isFull}
+                            disabled={isFull || isCompleted}
                           >
-                            {isFull ? "Event Full" : eventData.price === 0 ? "Register for Free" : "Register & Pay"}
+                            {isCompleted
+                              ? "Event Completed"
+                              : isFull
+                                ? "Event Full"
+                                : eventData.price === 0
+                                  ? "Register for Free"
+                                  : "Register & Pay"}
                           </Button>
                         )}
 
@@ -397,7 +415,16 @@ export default function EventDetailsPage() {
         isOpen={isRegistrationOpen}
         onClose={() => setIsRegistrationOpen(false)}
         onSuccess={handleRegistrationSuccess}
-        event={eventData}
+        event={{
+          id: eventData._id,
+          title: eventData.title,
+          date: formattedDate,
+          time: formattedStartTime,
+          venue: eventData.venue || eventData.location,
+          price: eventData.price || 0,
+          capacity: eventData.capacity,
+          registered: registered
+        }}
       />
     </AuthGuard >
   )

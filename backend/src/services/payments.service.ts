@@ -4,6 +4,8 @@ import { Registration } from "../models/Registration";
 import { Ticket } from "../models/Ticket";
 import { AppError } from "../middlewares/error";
 import { generateQRToken } from "../utils/qr";
+import { emailService } from "./email.service";
+import { User } from "../models/User";
 import crypto from "crypto";
 
 export const paymentsService = {
@@ -86,6 +88,24 @@ export const paymentsService = {
 
         registration.ticketId = ticket._id;
         await registration.save();
+
+        // Send payment success email
+        try {
+          const user = await User.findById(payment.userId);
+          const event = await Event.findById(payment.eventId);
+
+          if (user && event) {
+            await emailService.sendPaymentSuccessEmail(
+              user.email,
+              user.name,
+              payment.amount,
+              event.title,
+              ticket._id.toString()
+            );
+          }
+        } catch (err) {
+          console.error("Failed to send payment email:", err);
+        }
 
         return {
           payment,

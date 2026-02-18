@@ -27,24 +27,22 @@ export default function OrganizerDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
     const loadData = async () => {
-      if (!user || !user._id) {
-        console.error('Dashboard: User or user ID is missing', user)
-        return
-      }
+      // If no user yet (loading), or user has no ID yet, wait.
+      // But if we have a user object but no ID, that's an issue. 
+      // Assuming valid user always has _id.
+      if (!user?._id) return
 
       try {
         setLoading(true)
         // Load organizer's events
-        const eventsRes = await api.getOrganizerEvents(user._id, { 
+        const eventsRes = await api.getOrganizerEvents(user._id, {
           limit: 50
         })
-        
-        // Debug: log the response
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Dashboard API Response:', eventsRes)
-        }
-        
+
+        if (!mounted) return
+
         // Handle both response formats
         let myEvents: any[] = []
         if (eventsRes) {
@@ -56,7 +54,7 @@ export default function OrganizerDashboard() {
             myEvents = eventsRes
           }
         }
-        
+
         console.log(`Dashboard: Loaded ${myEvents.length} events`)
         setEvents(myEvents)
 
@@ -68,39 +66,48 @@ export default function OrganizerDashboard() {
         let avgRating = 0
         try {
           const feedbackRes = await api.getOrganizerFeedback(user._id, { limit: 500 })
-          const feedbackItems = feedbackRes.data || feedbackRes.items || []
-          if (feedbackItems.length > 0) {
-            const totalRating = feedbackItems.reduce((sum, f) => sum + f.rating, 0)
-            avgRating = totalRating / feedbackItems.length
+          if (mounted) {
+            const feedbackItems = feedbackRes.data || feedbackRes.items || []
+            if (feedbackItems.length > 0) {
+              const totalRating = feedbackItems.reduce((sum, f) => sum + f.rating, 0)
+              avgRating = totalRating / feedbackItems.length
+            }
           }
         } catch (err) {
           console.error("Failed to load feedback:", err)
         }
 
-        const newStats = {
-          totalEvents: myEvents.length,
-          totalAttendees,
-          revenue,
-          avgRating
+        if (mounted) {
+          setStats({
+            totalEvents: myEvents.length,
+            totalAttendees,
+            revenue,
+            avgRating
+          })
         }
-        
-        setStats(newStats)
       } catch (error) {
         console.error("Failed to load organizer data:", error)
-        // Set empty stats on error
-        setStats({
-          totalEvents: 0,
-          totalAttendees: 0,
-          revenue: 0,
-          avgRating: 0
-        })
+        if (mounted) {
+          setStats({
+            totalEvents: 0,
+            totalAttendees: 0,
+            revenue: 0,
+            avgRating: 0
+          })
+        }
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
 
     loadData()
-  }, [user])
+
+    return () => {
+      mounted = false
+    }
+  }, [user?._id]) // Depend explicitly on user._id to trigger when it becomes available
 
   return (
     <AuthGuard requiredRole="organizer">

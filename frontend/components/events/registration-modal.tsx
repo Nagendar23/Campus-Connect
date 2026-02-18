@@ -252,7 +252,13 @@ export function RegistrationModal({ isOpen, onClose, onSuccess, event }: Registr
               </div>
 
               <div className="space-y-3">
-                <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
+                <Button
+                  onClick={() => {
+                    handleClose()
+                    router.push(`/ticket/${registrationId}`)
+                  }}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
                   View Ticket
                 </Button>
                 <Button variant="outline" onClick={handleClose} className="w-full bg-transparent">
