@@ -8,6 +8,15 @@ import paymentsRoutes from "./payments.routes";
 import analyticsRoutes from "./analytics.routes";
 import organizersRoutes from "./organizers.routes";
 import registrationsRoutes from "./registrations.routes";
+import volunteersRoutes from "./volunteers.routes";
+import sponsorsRoutes from "./sponsors.routes";
+import volunteerTasksRoutes from "./volunteerTasks.routes";
+import certificatesRoutes from "./certificates.routes";
+import budgetRoutes from "./budget.routes";
+import volunteerApplicationsRoutes from "./volunteerApplications.routes";
+import volunteerAssignmentsRoutes from "./volunteerAssignments.routes";
+import sponsorOpportunitiesRoutes from "./sponsorOpportunities.routes";
+import sponsorshipDealsRoutes from "./sponsorshipDeals.routes";
 
 const router = Router();
 
@@ -20,5 +29,14 @@ router.use("/payments", paymentsRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/organizers", organizersRoutes);
 router.use("/registrations", registrationsRoutes);
+router.use("/volunteers", volunteersRoutes);
+router.use("/sponsors", sponsorsRoutes);
+router.use("/volunteer-tasks", volunteerTasksRoutes);
+router.use("/volunteer-applications", volunteerApplicationsRoutes);
+router.use("/volunteer-assignments", volunteerAssignmentsRoutes);
+router.use("/certificates", certificatesRoutes);
+router.use("/budget", budgetRoutes);
+router.use("/sponsor-opportunities", sponsorOpportunitiesRoutes);
+router.use("/sponsorship-deals", sponsorshipDealsRoutes);
 
 export default router;

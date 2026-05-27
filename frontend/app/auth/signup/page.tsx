@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Mail, Lock, User, Building, AlertCircle } from "lucide-react"
+import { Calendar, Mail, Lock, User, Building, AlertCircle, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
@@ -28,22 +28,34 @@ export default function SignupPage() {
   const [organizerPassword, setOrganizerPassword] = useState("")
   const [organizerConfirmPassword, setOrganizerConfirmPassword] = useState("")
   
+  // Volunteer form state
+  const [volunteerName, setVolunteerName] = useState("")
+  const [volunteerEmail, setVolunteerEmail] = useState("")
+  const [volunteerPassword, setVolunteerPassword] = useState("")
+  const [volunteerConfirmPassword, setVolunteerConfirmPassword] = useState("")
+
+  // Sponsor form state
+  const [sponsorName, setSponsorName] = useState("")
+  const [sponsorEmail, setSponsorEmail] = useState("")
+  const [sponsorPassword, setSponsorPassword] = useState("")
+  const [sponsorConfirmPassword, setSponsorConfirmPassword] = useState("")
+  
   const router = useRouter()
   const searchParams = useSearchParams()
-  const defaultRole = searchParams.get("role") as "student" | "organizer" | null
+  const defaultRole = searchParams.get("role") as "student" | "organizer" | "volunteer" | "sponsor" | null
   const { signup } = useAuth()
 
-  const handleSignup = async (e: FormEvent, role: "student" | "organizer") => {
+  const handleSignup = async (e: FormEvent, role: "student" | "organizer" | "volunteer" | "sponsor") => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
     try {
-      const name = role === "student" ? studentName : organizerName
-      const email = role === "student" ? studentEmail : organizerEmail
-      const password = role === "student" ? studentPassword : organizerPassword
+      const name = role === "student" ? studentName : role === "organizer" ? organizerName : role === "volunteer" ? volunteerName : sponsorName
+      const email = role === "student" ? studentEmail : role === "organizer" ? organizerEmail : role === "volunteer" ? volunteerEmail : sponsorEmail
+      const password = role === "student" ? studentPassword : role === "organizer" ? organizerPassword : role === "volunteer" ? volunteerPassword : sponsorPassword
       const confirmPassword =
-        role === "student" ? studentConfirmPassword : organizerConfirmPassword
+        role === "student" ? studentConfirmPassword : role === "organizer" ? organizerConfirmPassword : role === "volunteer" ? volunteerConfirmPassword : sponsorConfirmPassword
 
       // Validation
       if (!name.trim()) {
@@ -75,8 +87,12 @@ export default function SignupPage() {
       // Redirect based on role
       if (role === "student") {
         router.push("/dashboard")
-      } else {
+      } else if (role === "organizer") {
         router.push("/organizer")
+      } else if (role === "volunteer") {
+        router.push("/volunteer")
+      } else {
+        router.push("/sponsor")
       }
     } catch (err: any) {
       console.error('Signup error:', err);
@@ -100,7 +116,7 @@ export default function SignupPage() {
         </div>
 
         <Tabs defaultValue={defaultRole || "student"} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="student" className="flex items-center space-x-2">
               <User className="h-4 w-4" />
               <span>Student</span>
@@ -108,6 +124,14 @@ export default function SignupPage() {
             <TabsTrigger value="organizer" className="flex items-center space-x-2">
               <Building className="h-4 w-4" />
               <span>Organizer</span>
+            </TabsTrigger>
+            <TabsTrigger value="volunteer" className="flex items-center space-x-2">
+              <Users className="h-4 w-4" />
+              <span>Volunteer</span>
+            </TabsTrigger>
+            <TabsTrigger value="sponsor" className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4" />
+              <span>Sponsor</span>
             </TabsTrigger>
           </TabsList>
 
@@ -172,6 +196,140 @@ export default function SignupPage() {
 
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Create Student Account"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Volunteer Signup */}
+          <TabsContent value="volunteer">
+            <Card>
+              <CardHeader>
+                <CardTitle>Volunteer Registration</CardTitle>
+                <CardDescription>Create your volunteer account to apply for events and tasks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {error && (
+                  <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={(e) => handleSignup(e, "volunteer")} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Full Name</Label>
+                    <Input
+                      value={volunteerName}
+                      onChange={(e) => setVolunteerName(e.target.value)}
+                      placeholder="Jane Doe"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={volunteerEmail}
+                      onChange={(e) => setVolunteerEmail(e.target.value)}
+                      placeholder="volunteer@university.edu"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <Input
+                      type="password"
+                      value={volunteerPassword}
+                      onChange={(e) => setVolunteerPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Confirm Password</Label>
+                    <Input
+                      type="password"
+                      value={volunteerConfirmPassword}
+                      onChange={(e) => setVolunteerConfirmPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Creating account..." : "Create Volunteer Account"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sponsor Signup */}
+          <TabsContent value="sponsor">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sponsor Registration</CardTitle>
+                <CardDescription>Create your sponsor account to discover events and sponsor packages</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {error && (
+                  <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={(e) => handleSignup(e, "sponsor")} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Organization / Name</Label>
+                    <Input
+                      value={sponsorName}
+                      onChange={(e) => setSponsorName(e.target.value)}
+                      placeholder="Acme Corp"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={sponsorEmail}
+                      onChange={(e) => setSponsorEmail(e.target.value)}
+                      placeholder="sponsor@company.com"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <Input
+                      type="password"
+                      value={sponsorPassword}
+                      onChange={(e) => setSponsorPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Confirm Password</Label>
+                    <Input
+                      type="password"
+                      value={sponsorConfirmPassword}
+                      onChange={(e) => setSponsorConfirmPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Creating account..." : "Create Sponsor Account"}
                   </Button>
                 </form>
               </CardContent>

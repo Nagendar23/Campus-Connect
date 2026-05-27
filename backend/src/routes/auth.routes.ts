@@ -13,7 +13,7 @@ const signupSchema = z.object({
     name: z.string().min(1),
     email: z.string().email(),
     password: z.string().min(6),
-    role: z.enum(["student", "organizer"]).optional(),
+    role: z.enum(["student", "organizer", "volunteer", "sponsor"]).optional(),
   }),
 });
 

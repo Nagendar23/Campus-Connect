@@ -107,5 +107,47 @@ export const emailService = {
       </div>
     `;
         return this.sendEmail(to, `Payment Receipt: ${eventName}`, html);
-    }
+    },
+
+    async sendVolunteerAssignmentEmail(to: string, volunteerName: string, eventName: string, roleTitle?: string) {
+                const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2563EB;">You're Assigned to a Task</h2>
+                <p>Hi ${volunteerName},</p>
+                <p>You have been assigned${roleTitle ? ` as ${roleTitle}` : ""} for <strong>${eventName}</strong>.</p>
+                <p>Please check your dashboard for details and next steps.</p>
+                <br>
+                <p>Best regards,<br>The Campus Connect Team</p>
+            </div>
+        `;
+                return this.sendEmail(to, `Volunteer Assignment: ${eventName}`, html);
+        },
+
+        async sendSponsorIntroEmail(to: string, companyName: string, eventName: string, packageTitle?: string) {
+                const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #374151;">New Sponsorship Opportunity</h2>
+                <p>Hi ${companyName},</p>
+                <p>There's a sponsorship opportunity for <strong>${eventName}</strong>${packageTitle ? ` (Package: ${packageTitle})` : ""}.</p>
+                <p>Visit your sponsor dashboard to review details and next steps.</p>
+                <br>
+                <p>Best regards,<br>The Campus Connect Team</p>
+            </div>
+        `;
+                return this.sendEmail(to, `Sponsorship Opportunity: ${eventName}`, html);
+        },
+
+        async sendCertificateEmail(to: string, recipientName: string, eventName: string, certificateUrl: string) {
+                const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #8B5CF6;">Certificate of Participation</h2>
+                <p>Hi ${recipientName},</p>
+                <p>Thank you for participating in <strong>${eventName}</strong>. Download your certificate here:</p>
+                <p><a href="${certificateUrl}" target="_blank" rel="noopener">Download Certificate</a></p>
+                <br>
+                <p>Best regards,<br>The Campus Connect Team</p>
+            </div>
+        `;
+                return this.sendEmail(to, `Your Certificate: ${eventName}`, html);
+        }
 };

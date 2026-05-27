@@ -318,6 +318,129 @@ export const api = {
     const query = usp.toString();
     return request<EventAnalytics>(`/analytics/events/${eventId}` + (query ? `?${query}` : ""));
   },
+
+  // Volunteers
+  createVolunteerProfile: (payload: { bio?: string; skills?: string[]; availability?: string }) =>
+    request<Volunteer>(`/volunteers`, { method: "POST", body: payload }),
+  getMyVolunteerProfile: () => request<Volunteer>(`/volunteers/me`),
+  getVolunteer: (id: string) => request<Volunteer>(`/volunteers/${id}`),
+  listVolunteers: (params?: { page?: number; limit?: number }) => {
+    const usp = new URLSearchParams();
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") usp.append(k, String(v));
+    });
+    const query = usp.toString();
+    return request<Volunteer[]>(`/volunteers` + (query ? `?${query}` : ""));
+  },
+  updateVolunteer: (id: string, payload: Partial<Volunteer>) =>
+    request<Volunteer>(`/volunteers/${id}`, { method: "PATCH", body: payload }),
+
+  // Sponsors
+  createSponsor: (payload: { companyName: string; website?: string; industry?: string; contactEmail?: string; packages?: any[] }) =>
+    request<Sponsor>(`/sponsors`, { method: "POST", body: payload }),
+  getMySponsorProfile: () => request<Sponsor>(`/sponsors/me`),
+  getSponsor: (id: string) => request<Sponsor>(`/sponsors/${id}`),
+  listSponsors: (params?: { page?: number; limit?: number }) => {
+    const usp = new URLSearchParams();
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") usp.append(k, String(v));
+    });
+    const query = usp.toString();
+    return request<Sponsor[]>(`/sponsors` + (query ? `?${query}` : ""));
+  },
+  updateSponsor: (id: string, payload: Partial<Sponsor>) =>
+    request<Sponsor>(`/sponsors/${id}`, { method: "PATCH", body: payload }),
+
+  // Volunteer tasks
+  listVolunteerTasks: (params?: { eventId?: string; assignedTo?: string; status?: "todo" | "in_progress" | "done" }) => {
+    const usp = new URLSearchParams();
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") usp.append(k, String(v));
+    });
+    const query = usp.toString();
+    return request<{ data: VolunteerTask[] }>(`/volunteer-tasks` + (query ? `?${query}` : ""));
+  },
+  createVolunteerTask: (payload: Partial<VolunteerTask> & { title: string }) =>
+    request<{ data: VolunteerTask }>(`/volunteer-tasks`, { method: "POST", body: payload }),
+  updateVolunteerTask: (id: string, payload: Partial<VolunteerTask>) =>
+    request<{ data: VolunteerTask }>(`/volunteer-tasks/${id}`, { method: "PATCH", body: payload }),
+  deleteVolunteerTask: (id: string) => request<void>(`/volunteer-tasks/${id}`, { method: "DELETE" }),
+
+  // Volunteer applications
+  listVolunteerApplications: (params?: { eventId?: string; volunteerId?: string; status?: VolunteerApplicationStatus; page?: number; limit?: number }) => {
+    const usp = new URLSearchParams();
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") usp.append(k, String(v));
+    });
+    const query = usp.toString();
+    return request<VolunteerApplication[]>(`/volunteer-applications` + (query ? `?${query}` : ""));
+  },
+  getVolunteerApplication: (id: string) => request<VolunteerApplication>(`/volunteer-applications/${id}`),
+  createVolunteerApplication: (payload: CreateVolunteerApplicationPayload) =>
+    request<VolunteerApplication>(`/volunteer-applications`, { method: "POST", body: payload }),
+  updateVolunteerApplication: (id: string, payload: Partial<VolunteerApplication>) =>
+    request<VolunteerApplication>(`/volunteer-applications/${id}`, { method: "PATCH", body: payload }),
+  deleteVolunteerApplication: (id: string) => request<void>(`/volunteer-applications/${id}`, { method: "DELETE" }),
+
+  // Volunteer assignments
+  listVolunteerAssignments: (params?: { eventId?: string; volunteerId?: string; status?: VolunteerAssignmentStatus; page?: number; limit?: number }) => {
+    const usp = new URLSearchParams();
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") usp.append(k, String(v));
+    });
+    const query = usp.toString();
+    return request<VolunteerAssignment[]>(`/volunteer-assignments` + (query ? `?${query}` : ""));
+  },
+  getVolunteerAssignment: (id: string) => request<VolunteerAssignment>(`/volunteer-assignments/${id}`),
+  createVolunteerAssignment: (payload: CreateVolunteerAssignmentPayload) =>
+    request<VolunteerAssignment>(`/volunteer-assignments`, { method: "POST", body: payload }),
+  updateVolunteerAssignment: (id: string, payload: Partial<VolunteerAssignment>) =>
+    request<VolunteerAssignment>(`/volunteer-assignments/${id}`, { method: "PATCH", body: payload }),
+  deleteVolunteerAssignment: (id: string) => request<void>(`/volunteer-assignments/${id}`, { method: "DELETE" }),
+
+  // Sponsor opportunities
+  listSponsorOpportunities: (params?: { eventId?: string; organizerId?: string; status?: SponsorOpportunityStatus; page?: number; limit?: number }) => {
+    const usp = new URLSearchParams();
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") usp.append(k, String(v));
+    });
+    const query = usp.toString();
+    return request<SponsorOpportunity[]>(`/sponsor-opportunities` + (query ? `?${query}` : ""));
+  },
+  getSponsorOpportunity: (id: string) => request<SponsorOpportunity>(`/sponsor-opportunities/${id}`),
+  createSponsorOpportunity: (payload: CreateSponsorOpportunityPayload) =>
+    request<SponsorOpportunity>(`/sponsor-opportunities`, { method: "POST", body: payload }),
+  updateSponsorOpportunity: (id: string, payload: Partial<SponsorOpportunity>) =>
+    request<SponsorOpportunity>(`/sponsor-opportunities/${id}`, { method: "PATCH", body: payload }),
+  deleteSponsorOpportunity: (id: string) => request<void>(`/sponsor-opportunities/${id}`, { method: "DELETE" }),
+
+  // Sponsorship deals
+  listSponsorshipDeals: (params?: { eventId?: string; sponsorId?: string; status?: SponsorshipDealStatus; opportunityId?: string; page?: number; limit?: number }) => {
+    const usp = new URLSearchParams();
+    if (params) Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") usp.append(k, String(v));
+    });
+    const query = usp.toString();
+    return request<SponsorshipDeal[]>(`/sponsorship-deals` + (query ? `?${query}` : ""));
+  },
+  getSponsorshipDeal: (id: string) => request<SponsorshipDeal>(`/sponsorship-deals/${id}`),
+  createSponsorshipDeal: (payload: CreateSponsorshipDealPayload) =>
+    request<SponsorshipDeal>(`/sponsorship-deals`, { method: "POST", body: payload }),
+  updateSponsorshipDeal: (id: string, payload: Partial<SponsorshipDeal>) =>
+    request<SponsorshipDeal>(`/sponsorship-deals/${id}`, { method: "PATCH", body: payload }),
+  deleteSponsorshipDeal: (id: string) => request<void>(`/sponsorship-deals/${id}`, { method: "DELETE" }),
+
+  // Certificates
+  issueCertificate: (payload: { eventId: string; userId: string; role: string; certificateUrl: string }) =>
+    request<any>(`/certificates/issue`, { method: "POST", body: payload }),
+  getMyCertificates: () => request<any[]>(`/certificates/me`),
+  getEventCertificates: (eventId: string) => request<any[]>(`/certificates/event/${eventId}`),
+
+  // Budget
+  addBudgetTransaction: (payload: { eventId: string; amount: number; type: "income" | "expense"; category: string; description: string; date?: string }) =>
+    request<any>(`/budget/transaction`, { method: "POST", body: payload }),
+  getEventBudget: (eventId: string) => request<any>(`/budget/event/${eventId}`),
+  getMyBudget: () => request<any[]>(`/budget/me`),
 };
 
 // Shared types matching backend models
@@ -325,7 +448,7 @@ export type User = {
   _id: string;
   name: string;
   email: string;
-  role: "student" | "organizer" | "admin";
+  role: "student" | "organizer" | "admin" | "volunteer" | "sponsor";
   avatarUrl?: string;
   phone?: string;
   createdAt?: string;
@@ -351,6 +474,162 @@ export type Event = {
   checkedInCount?: number;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type VolunteerTask = {
+  _id: string;
+  title: string;
+  description?: string;
+  assignedTo?: string;
+  eventId?: string;
+  status: "todo" | "in_progress" | "done";
+  metadata?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type VolunteerApplicationStatus = "pending" | "approved" | "rejected" | "withdrawn";
+
+export type VolunteerApplication = {
+  _id: string;
+  volunteerId: string | Volunteer;
+  eventId: string | Event;
+  status: VolunteerApplicationStatus;
+  motivation?: string;
+  availability?: string;
+  skillsSnapshot?: string[];
+  appliedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateVolunteerApplicationPayload = {
+  volunteerId: string;
+  eventId: string;
+  motivation?: string;
+  availability?: string;
+  skillsSnapshot?: string[];
+};
+
+export type VolunteerAssignmentStatus = "assigned" | "confirmed" | "completed" | "cancelled";
+
+export type VolunteerAssignment = {
+  _id: string;
+  volunteerId: string | Volunteer;
+  eventId: string | Event;
+  roleTitle?: string;
+  status: VolunteerAssignmentStatus;
+  startTime?: string;
+  endTime?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateVolunteerAssignmentPayload = {
+  volunteerId: string;
+  eventId: string;
+  roleTitle?: string;
+  status?: VolunteerAssignmentStatus;
+  startTime?: string;
+  endTime?: string;
+  notes?: string;
+};
+
+export type Volunteer = {
+  _id: string;
+  userId: string | User;
+  bio?: string;
+  skills?: string[];
+  availability?: string;
+  assignedEvents?: Array<string | Event>;
+  score?: number;
+  achievements?: Array<{ title: string; points?: number; awardedAt?: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type SponsorshipPackage = {
+  title: string;
+  amount: number;
+  description?: string;
+};
+
+export type Sponsor = {
+  _id: string;
+  userId?: string | User;
+  companyName: string;
+  website?: string;
+  industry?: string;
+  contactEmail?: string;
+  packages?: SponsorshipPackage[];
+  interestedCategories?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type SponsorOpportunityStatus = "open" | "closed" | "fulfilled";
+
+export type SponsorOpportunity = {
+  _id: string;
+  eventId: string | Event;
+  organizerId: string | User;
+  title: string;
+  description?: string;
+  packageTitle?: string;
+  targetAmount?: number;
+  categories?: string[];
+  status: SponsorOpportunityStatus;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateSponsorOpportunityPayload = {
+  eventId: string;
+  organizerId: string;
+  title: string;
+  description?: string;
+  packageTitle?: string;
+  targetAmount?: number;
+  categories?: string[];
+  status?: SponsorOpportunityStatus;
+};
+
+export type SponsorshipDealStatus = "proposed" | "active" | "completed" | "cancelled";
+
+export type SponsorshipDeal = {
+  _id: string;
+  sponsorId: string | Sponsor;
+  eventId: string | Event;
+  opportunityId?: string | SponsorOpportunity;
+  packageTitle?: string;
+  amount: number;
+  status: SponsorshipDealStatus;
+  signedAt?: string;
+  roi?: {
+    impressions?: number;
+    clicks?: number;
+    leads?: number;
+    notes?: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateSponsorshipDealPayload = {
+  sponsorId: string;
+  eventId: string;
+  opportunityId?: string;
+  packageTitle?: string;
+  amount: number;
+  status?: SponsorshipDealStatus;
+  signedAt?: string;
+  roi?: {
+    impressions?: number;
+    clicks?: number;
+    leads?: number;
+    notes?: string;
+  };
 };
 
 export type CreateEventPayload = {
@@ -456,6 +735,14 @@ export type OrganizerAnalytics = {
   totalAttendees: number;
   totalRevenue: number;
   checkInRate: number;
+  volunteerProfiles?: number;
+  volunteersAssigned?: number;
+  sponsorCount?: number;
+  volunteerApplications?: number;
+  volunteerAssignments?: number;
+  sponsorOpportunities?: number;
+  sponsorshipDeals?: number;
+  sponsorshipRevenue?: number;
   registrationsByDay?: Array<{ date: string; count: number }>;
   revenueByEvent?: Array<{ eventId: string; eventTitle: string; revenue: number }>;
 };
@@ -466,6 +753,11 @@ export type EventAnalytics = {
   totalAttendees: number;
   revenue: number;
   checkInRate: number;
+  volunteerApplications?: number;
+  volunteerAssignments?: number;
+  sponsorOpportunities?: number;
+  sponsorshipDeals?: number;
+  sponsorshipRevenue?: number;
   registrationsByDay?: Array<{ date: string; count: number }>;
   checkInsByDay?: Array<{ date: string; count: number }>;
 };

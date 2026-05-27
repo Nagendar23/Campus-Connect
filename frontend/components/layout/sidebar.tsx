@@ -20,7 +20,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 interface SidebarProps {
-  role: "student" | "organizer"
+  role: "student" | "organizer" | "volunteer" | "sponsor"
 }
 
 export function Sidebar({ role }: SidebarProps) {
@@ -42,12 +42,35 @@ export function Sidebar({ role }: SidebarProps) {
     { href: "/organizer/scanner", label: "QR Scanner", icon: QrCode },
     { href: "/organizer/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/organizer/attendees", label: "Attendees", icon: Users },
+    { href: "/organizer/volunteers", label: "Volunteers", icon: Users },
+    { href: "/organizer/sponsors", label: "Sponsors", icon: CreditCard },
+    { href: "/organizer/budget", label: "Budget", icon: CreditCard },
+    { href: "/organizer/certificates", label: "Certificates", icon: IdCard },
+    { href: "/organizer/communication", label: "Communication", icon: MessageSquare },
     { href: "/organizer/feedback", label: "Feedback", icon: MessageSquare },
     { href: "/organizer/payments", label: "Payments", icon: CreditCard },
     { href: "/organizer/account", label: "Account", icon: UserCircle },
   ]
 
-  const navItems = role === "student" ? studentNavItems : organizerNavItems
+  const volunteerNavItems = [
+    { href: "/volunteer", label: "Dashboard", icon: Home },
+    { href: "/volunteer/my-tasks", label: "My Tasks", icon: Calendar },
+    { href: "/volunteer/applications", label: "Applications", icon: MessageSquare },
+    { href: "/volunteer/achievements", label: "Achievements", icon: IdCard },
+    { href: "/events", label: "All Events", icon: Calendar },
+    { href: "/id-card", label: "Digital ID", icon: IdCard },
+  ]
+
+  const sponsorNavItems = [
+    { href: "/sponsor", label: "Dashboard", icon: Home },
+    { href: "/sponsor/marketplace", label: "Marketplace", icon: Calendar },
+    { href: "/sponsor/opportunities", label: "Opportunities", icon: Users },
+    { href: "/sponsor/packages", label: "Packages", icon: CreditCard },
+    { href: "/payments", label: "Payments", icon: CreditCard },
+  ]
+
+  const navItems =
+    role === "student" ? studentNavItems : role === "organizer" ? organizerNavItems : role === "volunteer" ? volunteerNavItems : sponsorNavItems
 
   return (
     <div className="w-64 bg-card border-r border-border h-screen sticky top-0">

@@ -1,6 +1,6 @@
 import { Schema, model, Document } from "mongoose";
 
-export type Role = "student" | "organizer" | "admin";
+export type Role = "student" | "organizer" | "admin" | "volunteer" | "sponsor";
 
 export interface IUser extends Document {
   name: string;
@@ -26,7 +26,7 @@ const UserSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ["student", "organizer", "admin"],
+      enum: ["student", "organizer", "admin", "volunteer", "sponsor"],
       default: "student",
       index: true,
     },

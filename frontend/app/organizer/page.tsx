@@ -173,6 +173,36 @@ export default function OrganizerDashboard() {
                         Manage Attendees
                       </Button>
                     </Link>
+                    <Link href="/organizer/volunteers">
+                      <Button variant="outline" className="bg-transparent">
+                        <Users className="mr-2 h-4 w-4" />
+                        Volunteer Hiring
+                      </Button>
+                    </Link>
+                    <Link href="/organizer/sponsors">
+                      <Button variant="outline" className="bg-transparent">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Sponsors
+                      </Button>
+                    </Link>
+                    <Link href="/organizer/budget">
+                      <Button variant="outline" className="bg-transparent">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Budget
+                      </Button>
+                    </Link>
+                    <Link href="/organizer/certificates">
+                      <Button variant="outline" className="bg-transparent">
+                        <Star className="mr-2 h-4 w-4" />
+                        Certificates
+                      </Button>
+                    </Link>
+                    <Link href="/organizer/communication">
+                      <Button variant="outline" className="bg-transparent">
+                        <Star className="mr-2 h-4 w-4" />
+                        Communication
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>

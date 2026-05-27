@@ -2,6 +2,12 @@ import { Event } from "../models/Event";
 import { Registration } from "../models/Registration";
 import { Ticket } from "../models/Ticket";
 import { Payment } from "../models/Payment";
+import { Volunteer } from "../models/Volunteer";
+import { Sponsor } from "../models/Sponsor";
+import { VolunteerApplication } from "../models/VolunteerApplication";
+import { VolunteerAssignment } from "../models/VolunteerAssignment";
+import { SponsorOpportunity } from "../models/SponsorOpportunity";
+import { SponsorshipDeal } from "../models/SponsorshipDeal";
 import { AppError } from "../middlewares/error";
 
 export const analyticsService = {
@@ -18,11 +24,34 @@ export const analyticsService = {
     const events = await Event.find(filter);
     const eventIds = events.map((e) => e._id);
 
-    const [registrations, attendees, payments] = await Promise.all([
+    const [
+      registrations,
+      attendees,
+      payments,
+      volunteerProfiles,
+      volunteersAssigned,
+      sponsorCount,
+      volunteerApplications,
+      volunteerAssignments,
+      sponsorOpportunities,
+      sponsorshipDeals,
+      sponsorshipRevenue,
+    ] = await Promise.all([
       Registration.countDocuments({ eventId: { $in: eventIds } }),
       Ticket.countDocuments({ eventId: { $in: eventIds }, checkedInAt: { $ne: null } }),
       Payment.aggregate([
         { $match: { eventId: { $in: eventIds }, status: "succeeded" } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+      Volunteer.countDocuments(),
+      Volunteer.countDocuments({ assignedEvents: { $in: eventIds } }),
+      Sponsor.countDocuments(),
+      VolunteerApplication.countDocuments({ eventId: { $in: eventIds } }),
+      VolunteerAssignment.countDocuments({ eventId: { $in: eventIds } }),
+      SponsorOpportunity.countDocuments({ eventId: { $in: eventIds } }),
+      SponsorshipDeal.countDocuments({ eventId: { $in: eventIds } }),
+      SponsorshipDeal.aggregate([
+        { $match: { eventId: { $in: eventIds }, status: { $ne: "cancelled" } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
     ]);
@@ -37,6 +66,14 @@ export const analyticsService = {
       totalAttendees: attendees,
       totalRevenue,
       checkInRate: parseFloat(checkInRate),
+      volunteerProfiles,
+      volunteersAssigned,
+      sponsorCount,
+      volunteerApplications,
+      volunteerAssignments,
+      sponsorOpportunities,
+      sponsorshipDeals,
+      sponsorshipRevenue: sponsorshipRevenue[0]?.total || 0,
     };
   },
 
@@ -50,7 +87,16 @@ export const analyticsService = {
       throw new AppError(403, "FORBIDDEN", "You don't have permission to view these analytics");
     }
 
-    const [totalRegistrations, totalAttendees, registrationsByDay] = await Promise.all([
+    const [
+      totalRegistrations,
+      totalAttendees,
+      registrationsByDay,
+      volunteerApplications,
+      volunteerAssignments,
+      sponsorOpportunities,
+      sponsorshipDeals,
+      sponsorshipRevenue,
+    ] = await Promise.all([
       Registration.countDocuments({ eventId }),
       Ticket.countDocuments({ eventId, checkedInAt: { $ne: null } }),
       Registration.aggregate([
@@ -62,6 +108,14 @@ export const analyticsService = {
           },
         },
         { $sort: { _id: 1 } },
+      ]),
+      VolunteerApplication.countDocuments({ eventId }),
+      VolunteerAssignment.countDocuments({ eventId }),
+      SponsorOpportunity.countDocuments({ eventId }),
+      SponsorshipDeal.countDocuments({ eventId }),
+      SponsorshipDeal.aggregate([
+        { $match: { eventId: eventId as any, status: { $ne: "cancelled" } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
     ]);
 
@@ -81,6 +135,11 @@ export const analyticsService = {
       checkInRate: parseFloat(checkInRate),
       registrationsByDay,
       capacityUtilization: ((totalRegistrations / event.capacity) * 100).toFixed(2),
+      volunteerApplications,
+      volunteerAssignments,
+      sponsorOpportunities,
+      sponsorshipDeals,
+      sponsorshipRevenue: sponsorshipRevenue[0]?.total || 0,
     };
   },
 };

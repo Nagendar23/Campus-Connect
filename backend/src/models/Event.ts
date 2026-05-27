@@ -14,6 +14,9 @@ export interface IEvent extends Document {
   status: "draft" | "published" | "archived";
   organizerId: Types.ObjectId;
   venue?: string;
+  volunteerSlots?: number;
+  sponsors?: Types.ObjectId[];
+  certificateTemplateUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +46,9 @@ const EventSchema = new Schema<IEvent>(
       index: true,
     },
     venue: { type: String },
+    volunteerSlots: { type: Number, default: 0 },
+    sponsors: [{ type: Schema.Types.ObjectId, ref: "Sponsor" }],
+    certificateTemplateUrl: { type: String },
   },
   { timestamps: true }
 );

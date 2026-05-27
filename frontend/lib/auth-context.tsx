@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean
   error: string | null
   login: (email: string, password: string) => Promise<void>
-  signup: (name: string, email: string, password: string, role: "student" | "organizer") => Promise<void>
+  signup: (name: string, email: string, password: string, role: "student" | "organizer" | "volunteer" | "sponsor") => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   updateProfile: (data: { name?: string; email?: string; phone?: string; avatarUrl?: string }) => Promise<void>
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signup = async (name: string, email: string, password: string, role: "student" | "organizer") => {
+  const signup = async (name: string, email: string, password: string, role: "student" | "organizer" | "volunteer" | "sponsor") => {
     try {
       setError(null)
       const result = await api.signup({ name, email, password, role })
