@@ -68,6 +68,7 @@ export default function StudentDashboard() {
     }
     return false
   }).length
+  const nextEvent = upcomingEvents[0]
 
   return (
     <AuthGuard requiredRole="student">
@@ -76,59 +77,104 @@ export default function StudentDashboard() {
         <div className="flex">
           <Sidebar role="student" />
           <main className="flex-1 p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
-              {/* Welcome Section */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold text-balance">Welcome back, {user?.name || 'Student'}!</h1>
-                  <p className="text-muted-foreground">Discover and join amazing campus events</p>
+            <div className="relative">
+              <div className="pointer-events-none absolute -top-16 right-6 h-48 w-48 rounded-full bg-gradient-to-br from-amber-200/50 via-emerald-200/40 to-sky-200/50 blur-3xl" />
+              <div className="pointer-events-none absolute left-0 top-40 h-56 w-56 rounded-full bg-gradient-to-br from-rose-200/40 via-purple-200/30 to-transparent blur-3xl" />
+              <div className="max-w-7xl mx-auto space-y-8 relative">
+                {/* Hero */}
+                <div className="rounded-2xl border bg-gradient-to-br from-white via-white/95 to-emerald-50/60 p-6 md:p-8 shadow-sm">
+                  <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-muted-foreground">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        Campus Pulse
+                      </div>
+                      <h1 className="text-4xl font-semibold leading-tight text-balance text-black">
+                        Welcome back, {user?.name || "Student"}
+                      </h1>
+                      <p className="text-muted-foreground max-w-xl">
+                        Pick your next experience. Track your passes, share feedback, and keep your campus calendar full.
+                      </p>
+                      {upcomingCount > 0 ? (
+                        <Badge variant="secondary" className="w-fit">
+                          {upcomingCount} upcoming {upcomingCount === 1 ? "event" : "events"}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <Link href="/events">
+                        <Button className="bg-foreground text-background hover:bg-foreground/90">
+                          Browse Events
+                        </Button>
+                      </Link>
+                      <Link href="/my-events">
+                        <Button variant="outline" className="bg-transparent">
+                          View My Passes
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                {upcomingCount > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="secondary" className="flex items-center space-x-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{upcomingCount} upcoming {upcomingCount === 1 ? 'event' : 'events'}</span>
-                    </Badge>
-                  </div>
-                )}
-              </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatsCard title="Registered Events" value={registeredCount.toString()} icon={Ticket} trend={`${registeredCount} total`} />
-                <StatsCard title="Attended Events" value={attendedCount.toString()} icon={Clock} trend={registeredCount > 0 ? `${Math.round((attendedCount / registeredCount) * 100)}% attendance rate` : 'No events yet'} />
-                <StatsCard title="Upcoming Events" value={upcomingCount.toString()} icon={Calendar} trend={upcomingCount > 0 ? 'Stay tuned!' : 'Register now'} />
-              </div>
-
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                  <CardDescription>Common tasks and shortcuts</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-3">
-                    <Link href="/events">
-                      <Button className="bg-primary hover:bg-primary/90">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Browse Events
-                      </Button>
-                    </Link>
-                    <Link href="/my-events">
-                      <Button variant="outline" className="bg-transparent">
-                        <Ticket className="mr-2 h-4 w-4" />
-                        My Tickets
-                      </Button>
-                    </Link>
-                    <Link href="/feedback">
-                      <Button variant="outline" className="bg-transparent">
-                        <Star className="mr-2 h-4 w-4" />
-                        Leave Feedback
-                      </Button>
-                    </Link>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatsCard title="Registered Events" value={registeredCount.toString()} icon={Ticket} trend={`${registeredCount} total`} />
+                    <StatsCard title="Attended Events" value={attendedCount.toString()} icon={Clock} trend={registeredCount > 0 ? `${Math.round((attendedCount / registeredCount) * 100)}% attendance rate` : "No events yet"} />
+                    <StatsCard title="Upcoming Events" value={upcomingCount.toString()} icon={Calendar} trend={upcomingCount > 0 ? "Stay tuned!" : "Register now"} />
                   </div>
-                </CardContent>
-              </Card>
+
+                  <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                    <CardHeader>
+                      <CardTitle className="text-white">Next Up</CardTitle>
+                      <CardDescription className="text-white/70">Your closest event on the horizon</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {nextEvent ? (
+                        <>
+                          <div className="text-lg font-semibold">{nextEvent.title}</div>
+                          <div className="text-sm text-white/70">
+                            {new Date(nextEvent.startTime).toLocaleDateString()} • {nextEvent.location}
+                          </div>
+                          <Link href={`/events/${nextEvent._id}`}>
+                            <Button className="bg-white text-slate-900 hover:bg-white/90">View Details</Button>
+                          </Link>
+                        </>
+                      ) : (
+                        <div className="text-sm text-white/70">No upcoming events yet. Browse to get started.</div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions */}
+                <Card className="border-0 bg-gradient-to-br from-white to-slate-50">
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                    <CardDescription>Common tasks and shortcuts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-3">
+                      <Link href="/events">
+                        <Button className="bg-primary hover:bg-primary/90">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Browse Events
+                        </Button>
+                      </Link>
+                      <Link href="/my-events">
+                        <Button variant="outline" className="bg-transparent">
+                          <Ticket className="mr-2 h-4 w-4" />
+                          My Tickets
+                        </Button>
+                      </Link>
+                      <Link href="/feedback">
+                        <Button variant="outline" className="bg-transparent">
+                          <Star className="mr-2 h-4 w-4" />
+                          Leave Feedback
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
 
               {/* My Upcoming Events */}
               <Card>
@@ -210,6 +256,7 @@ export default function StudentDashboard() {
                 )}
               </div>
             </div>
+          </div>
           </main>
         </div>
       </div>

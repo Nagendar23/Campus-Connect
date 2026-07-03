@@ -19,6 +19,14 @@ export const authService = {
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({ name, email, passwordHash, role });
 
+    if (role === "volunteer") {
+      const { Volunteer } = await import("../models/Volunteer");
+      await Volunteer.create({ userId: user._id });
+    } else if (role === "sponsor") {
+      const { Sponsor } = await import("../models/Sponsor");
+      await Sponsor.create({ userId: user._id, companyName: name });
+    }
+
     const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,

@@ -29,12 +29,20 @@ export const sponsorsController = {
 
   async getMe(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as AuthRequest).user?.userId;
+      const authUser = (req as AuthRequest).user;
+      const userId = authUser?.userId;
       if (!userId) {
         return res.status(401).json({ error: { code: "UNAUTHENTICATED", message: "Authentication required" } });
       }
-      const s = await sponsorsService.getByUserId(userId);
-      if (!s) return res.status(404).json({ error: { code: "NOT_FOUND", message: "Sponsor profile not found" } });
+      let s = await sponsorsService.getByUserId(userId);
+      if (!s) {
+        if (authUser?.role === "sponsor") {
+          const user = await import("../models/User").then(m => m.User.findById(userId));
+          s = await sponsorsService.create({ userId, companyName: user?.name || "My Company" });
+        } else {
+          return res.status(404).json({ error: { code: "NOT_FOUND", message: "Sponsor profile not found" } });
+        }
+      }
       res.status(200).json({ data: s });
     } catch (error) {
       next(error);

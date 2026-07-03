@@ -29,12 +29,19 @@ export const volunteersController = {
 
   async getMe(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as AuthRequest).user?.userId;
+      const authUser = (req as AuthRequest).user;
+      const userId = authUser?.userId;
       if (!userId) {
         return res.status(401).json({ error: { code: "UNAUTHENTICATED", message: "Authentication required" } });
       }
-      const v = await volunteersService.getByUserId(userId);
-      if (!v) return res.status(404).json({ error: { code: "NOT_FOUND", message: "Volunteer profile not found" } });
+      let v = await volunteersService.getByUserId(userId);
+      if (!v) {
+        if (authUser?.role === "volunteer") {
+          v = await volunteersService.create(userId, {});
+        } else {
+          return res.status(404).json({ error: { code: "NOT_FOUND", message: "Volunteer profile not found" } });
+        }
+      }
       res.status(200).json({ data: v });
     } catch (error) {
       next(error);
