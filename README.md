@@ -4,7 +4,6 @@ A full-stack event management platform for universities, built with Next.js, Exp
 
 # 🌐 Live URL's
 Frontend URL : https://nagendar-campus-connect.vercel.app/                                          
-Backend URL : https://campus-connect-htpy.onrender.com/
 
 ## 🚀 Quick Start
 
